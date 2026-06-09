@@ -234,9 +234,15 @@ function mockRowMatches(
     if (filter.op === '=') {
       return String(row[filter.col] ?? '') === String(v ?? '');
     }
-    return row[filter.col] !== v;
+    return String(row[filter.col] ?? '') !== String(v ?? '');
   }
-  return String(row[filter.col] ?? '') === String(filter.literal ?? '');
+  // Literal-side filter. Honor the operator.
+  const left = String(row[filter.col] ?? '');
+  const right = String(filter.literal ?? '');
+  if (filter.op === '!=') {
+    return left !== right;
+  }
+  return left === right;
 }
 
 function mockApplyFilter(
@@ -321,12 +327,17 @@ jest.mock('expo-sqlite', () => {
           const targetRows = tables.rowsFor(table);
           const sets = mockParseSetClauses(sql);
           const filters = mockParseWhereFilter(sql);
+          // Count the `?` params consumed by the SET clause so the
+          // WHERE clause sees the remaining tail of `params`. SQL
+          // binds SET first, WHERE second.
+          const setParamCount = sets.filter((s) => s.isParam).length;
+          const whereParams = params.slice(setParamCount);
           let changes = 0;
           for (const row of targetRows) {
             const idx = { i: 0 };
             let matches = filters.length === 0;
             for (const f of filters) {
-              if (mockRowMatches(row, f, params, idx)) {
+              if (mockRowMatches(row, f, whereParams, idx)) {
                 matches = true;
                 break;
               }
@@ -470,7 +481,25 @@ jest.mock('expo-image-picker', () => ({
   launchImageLibraryAsync: jest.fn(() =>
     Promise.resolve({ canceled: true, assets: null }),
   ),
+  launchCameraAsync: jest.fn(() =>
+    Promise.resolve({ canceled: true, assets: null }),
+  ),
   MediaTypeOptions: { Images: 'Images' },
+}));
+
+// expo-crypto mock — bare Node doesn't have the native module. The
+// `uuid()` infra helper falls back to `globalThis.crypto.randomUUID`
+// when the imported function is not a function, but the safer path
+// is to mock it explicitly so the call returns synchronously.
+jest.mock('expo-crypto', () => ({
+  randomUUID: () => {
+    if (typeof globalThis.crypto?.randomUUID === 'function') {
+      return globalThis.crypto.randomUUID();
+    }
+    // Deterministic UUID-shaped string for tests if the polyfill
+    // is missing.
+    return '00000000-0000-4000-8000-000000000000';
+  },
 }));
 
 // Silence noisy logs from libraries in test output.
@@ -482,3 +511,22 @@ console.warn = (...args: unknown[]) => {
   }
   originalWarn(...args);
 };
+
+// Export a function to reset the in-memory mock DBs. The `db`
+// module's `__resetForTest` will call this on next import. Pair
+// it with the test's own `beforeEach` to also drop the cached `DB`
+// wrapper between cases (the WU-2/WU-3 repos + store tests do this
+// already).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const __getMockSqliteModule = (): any => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  return require('expo-sqlite');
+};
+
+(globalThis as { __resetExpoSqliteMock?: () => void }).__resetExpoSqliteMock =
+  () => {
+    const sqlite = __getMockSqliteModule();
+    if (sqlite && typeof sqlite.__resetMockDatabases === 'function') {
+      sqlite.__resetMockDatabases();
+    }
+  };

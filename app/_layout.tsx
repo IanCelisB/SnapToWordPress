@@ -68,10 +68,7 @@ export default function RootLayout(): React.ReactElement {
           <Stack.Screen name="onboarding" />
         ) : null}
         {route === 'tabs' ? (
-          // WU-3 replaces the placeholder with the real
-          // `(tabs)/capture` screen. Until then, route to the
-          // WU-1 index placeholder.
-          <Stack.Screen name="index" />
+          <Stack.Screen name="(tabs)" />
         ) : null}
       </Stack>
       {route === 'loading' ? (

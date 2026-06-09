@@ -16,6 +16,12 @@ module.exports = {
   ],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    // RNTL 14 imports `test-renderer` (no react- prefix); the
+    // RN community preset installs `react-test-renderer`. Alias
+    // to a shim that exposes `createRoot` (which
+    // `react-test-renderer@19` dropped) so component tests that
+    // call `render(...)` resolve.
+    '^test-renderer$': '<rootDir>/jest/test-renderer-shim.js',
   },
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',
