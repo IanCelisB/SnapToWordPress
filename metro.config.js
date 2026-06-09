@@ -21,5 +21,5 @@ module.exports = withNativeWind(config, {
   // Re-scan the source tree for `className` occurrences. v4 supports glob
   // inputs; keeping the v3 paths so a future WU-5 polish pass doesn't have
   // to remember to update this.
-  input: ['./app/**/*.{js,jsx,ts,tsx}', './src/**/*.{js,jsx,ts,tsx}'],
+  input: './app/**/*.{js,jsx,ts,tsx}',
 });
