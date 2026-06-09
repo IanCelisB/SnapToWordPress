@@ -13,7 +13,13 @@ export type ErrorKey =
   | 'imagen-faltante'
   | 'precio-no-confirmado'
   | 'tienda-no-accesible'
-  | 'error-inesperado';
+  | 'error-inesperado'
+  // WU-4 sync-specific keys. Surfaced by the worker when a product
+  // exhausts its per-run attempt cap (recoverable) or hits a terminal
+  // error (non-recoverable). The presenter renders both as a single
+  // "N productos no se pudieron subir — tocá para ver" card.
+  | 'sincronizacion-reintentable'
+  | 'sincronizacion-fallida';
 
 export type Severity = 'info' | 'warning' | 'error' | 'blocking';
 

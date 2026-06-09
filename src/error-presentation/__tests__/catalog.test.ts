@@ -66,8 +66,8 @@ const EXACT_SPEC_ENTRIES: Partial<Record<ErrorKey, Pick<CatalogEntry, 'title' | 
 
 describe('error-presentation catalog', () => {
   describe('exhaustiveness', () => {
-    it('has exactly 11 keys (5 spec + 6 spec-flagged)', () => {
-      expect(ALL_ERROR_KEYS).toHaveLength(11);
+    it('has exactly 13 keys (5 spec + 6 spec-flagged + 2 WU-4 sync)', () => {
+      expect(ALL_ERROR_KEYS).toHaveLength(13);
     });
 
     it.each(ALL_ERROR_KEYS)('entry "%s" has title, message, severity', (key) => {
