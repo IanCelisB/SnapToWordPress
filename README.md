@@ -2,7 +2,9 @@
 
 Mobile app for photographing products at a small store and pushing them to a WooCommerce REST v3 backend as drafts, with a calm Spanish UI built for a non-technical user.
 
-> **Status**: WU-1 (foundation slice) landed. The error-presentation contract is the only thing other work units depend on; everything else is scaffolded-but-empty.
+> **Status**: WU-1 through WU-4 complete. The app captures products, queues them, syncs to WooCommerce, and presents errors in calm Spanish.
+
+<!-- screenshots coming soon -->
 
 ## What's in this slice (WU-1)
 
@@ -25,6 +27,18 @@ Mobile app for photographing products at a small store and pushing them to a Woo
 - EAS submit profiles + README polish (WU-5)
 
 See `openspec/changes/mvp-stock-capture/tasks.md` for the full plan.
+
+## Design Decisions
+
+1. **Auto-sync on Wi-Fi** — The sync worker starts automatically when the device connects to Wi-Fi. This is the default because the user's store has limited bandwidth and manual syncing is error-prone. The preference is persisted in `app_config` and can be toggled in Settings.
+
+2. **Global pause** — A single pause toggle controls the entire sync pipeline. When paused, neither auto-sync nor manual sync proceeds. The flag lives in `app_config` and is checked at every worker checkpoint (start, per-product iteration).
+
+3. **Draft-by-default** — Products are published as WooCommerce drafts, not live. The user must explicitly set `publishOnSync` to push a product as published. This prevents accidental public listing of incomplete products.
+
+4. **Idempotency** — The upload pipeline performs a pre-check (`GET /wc/v3/products?meta_key=local_id`) before creating a product. If the server already has the product (e.g. from a previous interrupted run), the worker short-circuits to `synced` without a duplicate POST.
+
+5. **Price gate** — The review queue requires the user to confirm the price before a product can be synced. This prevents the most common mistake: uploading a product with a wrong price. The gate compares original vs. current price and shows the delta.
 
 ## Local setup (after the user runs `git init`)
 
