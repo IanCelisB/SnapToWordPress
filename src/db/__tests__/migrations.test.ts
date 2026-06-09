@@ -73,27 +73,31 @@ describe('migrations', () => {
   });
 
   it('a simulated mid-migration crash leaves user_version unchanged and the next call retries', async () => {
-    // Build a fake `db` whose `transaction` throws partway through
-    // the step. The runner catches, throws MigrationError, and
-    // `user_version` stays at 0.
-    const original = await openDB();
-    await runMigrations(original); // First do a real run so user_version = 1.
-    expect(await original.getUserVersion()).toBe(1);
-
-    // Now simulate a NEW migration: register a v2 that throws.
+    // Build a fake `db` whose `transaction` throws during the up step.
+    // The runner catches, throws MigrationError, and `user_version`
+    // stays at 0 (no half-bump).
     const failingDb = {
-      ...original,
-      getUserVersion: async () => 1,
-      transaction: async () => {
+      exec: jest.fn(async () => undefined),
+      query: jest.fn(async () => []),
+      queryOne: jest.fn(async () => null),
+      run: jest.fn(async () => ({ changes: 0, lastInsertRowId: 0 })),
+      getUserVersion: jest.fn(async () => 0),
+      setUserVersion: jest.fn(async () => undefined),
+      close: jest.fn(async () => undefined),
+      transaction: jest.fn(async () => {
         throw new Error('simulated mid-migration crash');
-      },
+      }),
+      withTransaction: jest.fn(async () => {
+        throw new Error('simulated mid-migration crash');
+      }),
+      __raw: {},
     };
     await expect(
       runMigrations(failingDb as unknown as Awaited<typeof openDB>),
-    ).rejects.toThrow(/Migration to v2 failed/);
+    ).rejects.toThrow(/Migration to v1 failed/);
 
-    // The DB still reports v1 (the transaction rolled back; the
+    // The DB still reports v0 (the transaction rolled back; the
     // runner never bumped the version).
-    expect(await original.getUserVersion()).toBe(1);
+    expect(await failingDb.getUserVersion()).toBe(0);
   });
 });

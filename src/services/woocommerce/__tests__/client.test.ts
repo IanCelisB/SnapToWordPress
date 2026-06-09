@@ -16,9 +16,9 @@ import {
   canonicalizeBaseUrl,
   createWooClient,
 } from '../client';
-import { createHttpClient } from '../../../src/infra/http-client';
-import type { WCProduct } from '../../../src/domain/types';
-import type { HttpClient } from '../../../src/infra/http-client';
+import { createHttpClient } from '../../../infra/http-client';
+import type { WCProduct } from '../../../domain/types';
+import type { HttpClient } from '../../../infra/http-client';
 
 function fakeHttp(
   responses: ReadonlyArray<{ status: number; body: unknown }>,

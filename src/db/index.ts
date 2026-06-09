@@ -44,6 +44,11 @@ export async function openDB(): Promise<DB> {
 
 export function __resetForTest(): void {
   cached = null;
+  // Also clear the in-memory mock databases so each test gets a fresh DB.
+  const g = globalThis as { __resetExpoSqliteMock?: () => void };
+  if (typeof g.__resetExpoSqliteMock === 'function') {
+    g.__resetExpoSqliteMock();
+  }
 }
 
 function wrap(raw: SQLite.SQLiteDatabase): DB {

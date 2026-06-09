@@ -237,9 +237,8 @@ export function canonicalizeBaseUrl(input: string): string {
     // `mitienda.com` instead of `https://mitienda.com`.
     url = `https://${url}`;
   }
-  if (/^http:\/\//i.test(url) && !isDevBuild()) {
-    // Production builds reject `http://` outright.
-    throw new Error('https required');
+  if (/^http:\/\//i.test(url)) {
+    url = url.replace(/^http:\/\//i, 'https://');
   }
   // Parse to drop the path. We keep the host + port.
   const parsed = new URL(url);

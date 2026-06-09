@@ -21,9 +21,9 @@ import {
   saveCredentials,
   validateAndSave,
 } from '../credentials';
-import { SECURE_STORE_KEYS } from '../../../src/infra/secure-store';
-import { createHttpClient } from '../../../src/infra/http-client';
-import type { HttpClient } from '../../../src/infra/http-client';
+import { SECURE_STORE_KEYS } from '../../../infra/secure-store';
+import { createHttpClient } from '../../../infra/http-client';
+import type { HttpClient } from '../../../infra/http-client';
 
 const creds = {
   baseUrl: 'https://mitienda.com',
@@ -79,9 +79,10 @@ async function withMockedHttp<T>(
 describe('credentials', () => {
   beforeEach(async () => {
     // Reset the in-memory secure-store mock.
-    const mod = await import('expo-secure-store');
-    if (typeof (mod as unknown as { __reset?: () => void }).__reset === 'function') {
-      (mod as unknown as { __reset: () => void }).__reset();
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const mod = require('expo-secure-store');
+    if (typeof mod.__reset === 'function') {
+      mod.__reset();
     }
   });
 

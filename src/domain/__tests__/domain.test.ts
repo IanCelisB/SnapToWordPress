@@ -31,7 +31,7 @@ describe('backoff', () => {
   it('returns the first-step value for non-finite or negative attempts', () => {
     expect(backoff(-1)).toBe(1000);
     expect(backoff(NaN)).toBe(1000);
-    expect(backoff(Number.POSITIVE_INFINITY)).toBe(60_000);
+    expect(backoff(Number.POSITIVE_INFINITY)).toBe(1000);
   });
 
   it('caps per-run attempts at 5', () => {

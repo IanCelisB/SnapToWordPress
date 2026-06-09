@@ -29,7 +29,7 @@ function isProduction(): boolean {
 const CREDENTIAL_PATTERNS: ReadonlyArray<RegExp> = [
   /\bck_[a-f0-9]{16,}\b/gi,
   /\bcs_[a-f0-9]{16,}\b/gi,
-  /\bBasic\s+[A-Za-z0-9+/=]{20,}\b/gi,
+  /(?<=\bBasic\s)[A-Za-z0-9+/=]{20,}(?=\s|$)/gi,
 ];
 
 function redactCredentialLike(input: unknown): unknown {

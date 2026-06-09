@@ -187,16 +187,22 @@ type MockFilter = {
 function mockParseWhereFilter(sql: string): MockFilter[] {
   // Normalize whitespace so multi-line SQL is parsed correctly.
   const normalized = sql.replace(/\s+/g, ' ');
-  const whereIdx = normalized.toUpperCase().indexOf('WHERE');
+  // Use ' WHERE ' (with spaces) to avoid matching inside identifiers.
+  const whereIdx = normalized.toUpperCase().indexOf(' WHERE ');
   if (whereIdx === -1) return [];
-  const rest = normalized.slice(whereIdx + 5);
-  const orderIdx = rest.toUpperCase().indexOf('ORDER');
-  const where = orderIdx === -1 ? rest : rest.slice(0, orderIdx);
+  const rest = normalized.slice(whereIdx + 7);
+  // Stop at ORDER, GROUP, LIMIT, or end of string.
+  const endMatch = rest.toUpperCase().match(/\s+(ORDER|GROUP|LIMIT)\b/);
+  const where = endMatch && endMatch.index !== undefined
+    ? rest.slice(0, endMatch.index)
+    : rest;
   const parts = where.split(/\s+AND\s+/i);
   return parts
     .map((p): MockFilter => {
+      // Try two-char operators (!=, <>, <=, >=) before single-char (=, <, >)
+      // to avoid matching the '=' inside '!='.
       const m = p.match(
-        /(\w+)\s*(=|!=|<>|IN|<=|>=|<|>)\s*(\?|'[^']*'|\d+|\([^)]+\))/i,
+        /(\w+)\s*(!=|<>|<=|>=|IN|=|<|>)\s*(\?|'[^']*'|\d+|\([^)]+\))/i,
       );
       if (!m || !m[1] || !m[2] || !m[3]) {
         return { col: '', isParam: false, literal: null, op: '=' };
@@ -339,10 +345,8 @@ jest.mock('expo-sqlite', () => {
             }
           }
           const targetRows = tables.rowsFor(table);
-          // ON CONFLICT(key) DO UPDATE: detect and replace matching
-          // row in place. The mock doesn't enforce UNIQUE
-          // constraints natively, so we honor the upsert shape
-          // explicitly.
+          // ON CONFLICT handling: INSERT OR IGNORE skips on conflict;
+          // INSERT OR REPLACE / ON CONFLICT DO UPDATE replaces/updates.
           if (/ON\s+CONFLICT/i.test(sql)) {
             const conflictMatch = sql.match(
               /ON\s+CONFLICT\s*\(\s*(\w+)\s*\)/i,
@@ -353,7 +357,11 @@ jest.mock('expo-sqlite', () => {
                 (r) => r[conflictCol] === newRow[conflictCol],
               );
               if (existingIdx !== -1) {
-                // Replace the existing row, keeping its `id`.
+                if (/INSERT\s+OR\s+IGNORE/i.test(sql)) {
+                  // IGNORE: skip the insert, return existing row's id.
+                  return { changes: 0, lastInsertRowId: targetRows[existingIdx]?.id ?? 0 };
+                }
+                // REPLACE / DO UPDATE: replace the existing row.
                 newRow.id = targetRows[existingIdx]?.id;
                 targetRows[existingIdx] = { ...newRow };
                 return { changes: 1, lastInsertRowId: newRow.id ?? 0 };
@@ -409,16 +417,39 @@ jest.mock('expo-sqlite', () => {
           const targetRows = tables.rowsFor(table);
           const filters = mockParseWhereFilter(sql);
           const before = targetRows.length;
+          const deleted: MockRow[] = [];
           const kept = targetRows.filter((row) => {
             const idx = { i: 0 };
             for (const f of filters) {
               if (mockRowMatches(row, f, params, idx)) {
+                deleted.push(row);
                 return false;
               }
             }
             return true;
           });
           tables.tablesByName.set(table, kept);
+          // Cascade delete: for each deleted row, remove child rows
+          // that reference it via ON DELETE CASCADE FK relationships.
+          for (const dRow of deleted) {
+            if (table === 'products' && dRow.local_id != null) {
+              const imgRows = tables.rowsFor('product_images');
+              tables.tablesByName.set(
+                'product_images',
+                imgRows.filter((r) => r.product_local_id !== dRow.local_id),
+              );
+              const qRows = tables.rowsFor('sync_queue');
+              tables.tablesByName.set(
+                'sync_queue',
+                qRows.filter((r) => r.product_local_id !== dRow.local_id),
+              );
+              const aRows = tables.rowsFor('sync_attempts');
+              tables.tablesByName.set(
+                'sync_attempts',
+                aRows.filter((r) => r.product_local_id !== dRow.local_id),
+              );
+            }
+          }
           return { changes: before - kept.length, lastInsertRowId: 0 };
         }
         return { changes: 0, lastInsertRowId: 0 };

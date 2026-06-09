@@ -120,9 +120,9 @@ export const Strings = {
 
   // Onboarding
   onboardingTitle: 'Vincular tienda',
-  onboardingHint: 'Ingresá los datos de tu tienda WooCommerce.',
+  onboardingHint: 'Ingresá los datos de tu tienda para vincularla.',
   onboardingUrlLabel: 'URL de la tienda',
-  onboardingUrlPlaceholder: 'https://mitienda.com',
+  onboardingUrlPlaceholder: 'mitienda.com',
   onboardingKeyLabel: 'Consumer Key',
   onboardingKeyPlaceholder: 'ck_…',
   onboardingSecretLabel: 'Consumer Secret',
