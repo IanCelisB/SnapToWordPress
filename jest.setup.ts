@@ -15,6 +15,21 @@ if (typeof globalThis.crypto.randomUUID !== 'function') {
   globalThis.crypto.randomUUID = () => randomUUID();
 }
 
+// AsyncStorage mock — in-memory map for test isolation
+jest.mock('@react-native-async-storage/async-storage', () => {
+  const store = new Map<string, string>();
+  return {
+    __esModule: true,
+    default: {
+      getItem: jest.fn(async (key: string) => store.get(key) ?? null),
+      setItem: jest.fn(async (key: string, value: string) => { store.set(key, value); }),
+      removeItem: jest.fn(async (key: string) => { store.delete(key); }),
+      clear: jest.fn(async () => { store.clear(); }),
+      getAllKeys: jest.fn(async () => Array.from(store.keys())),
+    },
+  };
+});
+
 // react-native-reanimated + react-native-worklets are NOT loaded by
 // the WU-1/WU-2 test surface. The WU-1 setup wired
 // `require('react-native-reanimated/mock')`, but the v4 mock chain

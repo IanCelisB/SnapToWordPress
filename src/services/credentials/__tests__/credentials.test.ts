@@ -84,6 +84,11 @@ describe('credentials', () => {
     if (typeof mod.__reset === 'function') {
       mod.__reset();
     }
+    // Clear AsyncStorage mock between tests
+    const asyncStorage = require('@react-native-async-storage/async-storage');
+    if (typeof asyncStorage.default.clear === 'function') {
+      await asyncStorage.default.clear();
+    }
   });
 
   it('persists credentials on 200', async () => {
