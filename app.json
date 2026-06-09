@@ -1,0 +1,70 @@
+{
+  "expo": {
+    "name": "EtiquetadorDeProductos",
+    "slug": "etiquetador-de-productos",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "etiquetador",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFFFFF"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "cl.optifull.etiquetador",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Necesitamos la cámara para tomar fotos de los productos que querés etiquetar.",
+        "NSPhotoLibraryUsageDescription": "Necesitamos acceso a tus fotos para elegir imágenes de productos ya guardados.",
+        "NSPhotoLibraryAddUsageDescription": "Guardamos las fotos de productos en tu biblioteca cuando las exportás.",
+        "NSMicrophoneUsageDescription": "No usamos el micrófono. Este permiso aparece por la dependencia de la cámara."
+      }
+    },
+    "android": {
+      "package": "cl.optifull.etiquetador",
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.INTERNET"
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#FFFFFF"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Necesitamos la cámara para tomar fotos de los productos que querés etiquetar."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Necesitamos acceso a tus fotos para elegir imágenes de productos ya guardados."
+        }
+      ],
+      "expo-sqlite"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "00000000-0000-0000-0000-000000000000"
+      }
+    }
+  }
+}
