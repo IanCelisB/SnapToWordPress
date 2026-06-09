@@ -49,6 +49,7 @@ import {
   persistCapturedImage,
 } from '@/services/image-persistence';
 import { useCameraPermissionState } from '@/services/camera-permission';
+import { SyncBanner } from '@/ui/components/SyncBanner';
 import type { StoreCategory } from '@/domain/types';
 
 // One store instance per process — capture-form state is module-scoped
@@ -196,6 +197,8 @@ export default function Capture(): React.ReactElement {
         <ScrollView contentContainerStyle={styles.scroll}>
           <Text style={styles.title}>{Strings.captureTitle}</Text>
           <Text style={styles.subtitle}>{Strings.captureHint}</Text>
+
+          <SyncBanner />
 
           <View style={styles.imageStrip}>
             {form.imageUris.map((img) => (

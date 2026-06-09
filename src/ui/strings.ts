@@ -61,10 +61,17 @@ export const Strings = {
   queueCountsSyncing: 'sincronizando',
   queueCountsSynced: 'sincronizados',
   queueCountsNeedsAttention: 'necesitan atención',
+  queueCountSeparator: ' · ',
   queueDeleteConfirmTitle: 'Eliminar producto',
   queueDeleteConfirmMessage: '¿Seguro que querés eliminar este producto?',
   queueDeleteConfirmAction: 'Eliminar',
   queueDeleteCancelAction: 'Cancelar',
+
+  // Edit/delete confirm
+  editDeleteConfirmTitle: 'Eliminar producto',
+  editDeleteConfirmMessage: '¿Seguro que querés eliminar este producto?',
+  editDeleteConfirmYes: 'Eliminar',
+  editDeleteConfirmNo: 'Cancelar',
 
   // Edit screen (queue/[id])
   editTitle: 'Editar producto',
@@ -80,10 +87,23 @@ export const Strings = {
   syncResume: 'Reanudar',
   syncSyncNow: 'Sincronizar ahora',
   syncSyncing: 'Sincronizando producto {current} de {total}…',
+  syncSyncingShort: 'Sincronizando…',
   syncNeedsAttention: 'Necesitan atención',
   syncNeedsAttentionHint: 'Tocá para ver los productos con error.',
   syncCompleted: 'Todo sincronizado',
   syncCompletedHint: 'No hay productos pendientes.',
+  syncPausedHint: 'La sincronización está pausada.',
+  syncAuthHint: 'No pudimos conectar con la tienda. Toca para revisar las credenciales.',
+  syncLast: 'Última sincronización: {at}',
+  syncLastMoment: 'hace un momento',
+  syncLastMinutes: 'hace {n} min',
+  syncLastHours: 'hace {n} h',
+  syncLastDays: 'hace {n} d',
+
+  // Sync banner (persistent on capture/queue screens)
+  syncBannerRunning: 'Sincronizando {n} productos…',
+  syncBannerBlocked: '{n} productos necesitan atención',
+  syncBannerTapToSee: 'Tocá para ver',
 
   // Onboarding
   onboardingTitle: 'Vincular tienda',

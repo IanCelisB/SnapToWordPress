@@ -26,6 +26,10 @@ import { openDB, runMigrations } from '@/db';
 import { loadCredentials } from '@/services/credentials';
 import { presentError } from '@/error-presentation';
 import { colors } from '@/ui/theme';
+import { createSyncTrigger } from '@/sync/sync-trigger';
+import { createDefaultNetworkObserver } from '@/sync/network-observer';
+import { useSyncStore } from '@/stores/syncStore';
+import { useErrorStore } from '@/stores/error-store';
 
 type Route = 'loading' | 'blocked' | 'onboarding' | 'tabs';
 
@@ -34,23 +38,52 @@ export default function RootLayout(): React.ReactElement {
 
   useEffect(() => {
     let cancelled = false;
+    let trigger: ReturnType<typeof createSyncTrigger> | null = null;
+
     (async () => {
       try {
         const db = await openDB();
         await runMigrations(db);
         const creds = await loadCredentials();
         if (cancelled) return;
+
+        // Wire the sync trigger once credentials are available.
+        if (creds) {
+          const observer = createDefaultNetworkObserver();
+          const syncStore = useSyncStore();
+          const errorStore = useErrorStore();
+
+          trigger = createSyncTrigger({
+            db,
+            observer,
+            onEvent: (event) => {
+              syncStore.getState().applyEvent(event);
+              errorStore.getState().addEvent(event);
+            },
+          });
+
+          globalThis.__etiquetadorSyncTrigger = {
+            startManual: trigger.startManual,
+            isPaused: trigger.isPaused,
+            setPaused: trigger.setPaused,
+          };
+
+          await trigger.init();
+        }
+
         setRoute(creds ? 'tabs' : 'onboarding');
       } catch (err) {
         if (cancelled) return;
         setRoute('blocked');
-        // Re-surface through the presenter so the dev console carries
-        // a correlationId; the UI itself doesn't render the raw error.
         presentError(err);
       }
     })();
     return () => {
       cancelled = true;
+      if (trigger) {
+        trigger.dispose();
+        globalThis.__etiquetadorSyncTrigger = undefined;
+      }
     };
   }, []);
 
