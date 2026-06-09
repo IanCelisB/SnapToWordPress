@@ -105,6 +105,19 @@ export const Strings = {
   syncBannerBlocked: '{n} productos necesitan atención',
   syncBannerTapToSee: 'Tocá para ver',
 
+  // Needs-attention card (sync screen)
+  needsAttentionTitle: '{n} productos no se pudieron subir',
+  needsAttentionHint: 'Tocá para ver',
+
+  // Error banner (dismissable, on any screen)
+  errorBannerDismiss: 'Cerrar',
+
+  // Progress line (sync screen)
+  progressLine: 'Subiendo producto {current} de {total}…',
+
+  // Pause toggle
+  pauseToggleLabel: 'Sincronización pausada',
+
   // Onboarding
   onboardingTitle: 'Vincular tienda',
   onboardingHint: 'Ingresá los datos de tu tienda WooCommerce.',
