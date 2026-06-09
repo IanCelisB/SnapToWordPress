@@ -32,6 +32,7 @@ import { openDB } from '@/db';
 import { presentError, type CatalogEntry } from '@/error-presentation';
 import { Strings } from '@/ui/strings';
 import { StatusPill } from '@/ui/components/StatusPill';
+import { SyncBanner } from '@/ui/components/SyncBanner';
 import { colors, radius, spacing } from '@/ui/theme';
 import { removeImageFile } from '@/services/image-persistence';
 import type { Product, ProductImage } from '@/domain/types';
@@ -154,6 +155,8 @@ export default function QueueList(): React.ReactElement {
           {counts.syncing} {Strings.queueCountsSyncing}
         </Text>
       </View>
+
+      <SyncBanner />
 
       {error ? (
         <View style={styles.errorCard} testID="queue.error">

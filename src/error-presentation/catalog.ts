@@ -80,6 +80,22 @@ export const ERROR_CATALOG: Record<ErrorKey, CatalogEntry> = {
     severity: 'error',
     action: { kind: 'retry' },
   },
+  // WU-4: surfaced by the worker when a product exhausts its
+  // per-run attempt cap. `sincronizacion-reintentable` is the
+  // recoverable variant ("we'll try again later" — the user can tap
+  // "Reintentar" to re-queue immediately). `sincronizacion-fallida`
+  // is the dead variant (auth-blocking 401/403 that the user must
+  // resolve in settings).
+  'sincronizacion-reintentable': {
+    title: 'No pudimos subir este producto',
+    message: 'Volvé a intentar desde la cola cuando tengas señal.',
+    severity: 'warning',
+  },
+  'sincronizacion-fallida': {
+    title: 'No pudimos subir este producto',
+    message: 'Tocá para revisar y volver a intentar.',
+    severity: 'error',
+  },
 };
 
 export const ALL_ERROR_KEYS: readonly ErrorKey[] = Object.keys(

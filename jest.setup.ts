@@ -118,7 +118,8 @@ function mockParseTableFromDelete(sql: string): string | null {
 }
 
 function mockParseInsertColumns(sql: string): string[] {
-  const m = sql.match(/INTO\s+\w+\s*\(([^)]+)\)/i);
+  const normalized = sql.replace(/\s+/g, ' ');
+  const m = normalized.match(/INTO\s+\w+\s*\(([^)]+)\)/i);
   if (!m || !m[1]) return [];
   return m[1].split(',').map((c) => c.trim().replace(/["`[\]]/g, ''));
 }
@@ -128,7 +129,8 @@ type MockValue =
   | { kind: 'literal'; value: SqlParam };
 
 function mockParseValuesClause(sql: string): MockValue[] {
-  const m = sql.match(/VALUES\s*\(([^)]+)\)/i);
+  const normalized = sql.replace(/\s+/g, ' ');
+  const m = normalized.match(/VALUES\s*\(([^)]+)\)/i);
   if (!m || !m[1]) return [];
   return m[1].split(',').map((piece): MockValue => {
     const v = piece.trim();
@@ -149,7 +151,11 @@ function mockParseValuesClause(sql: string): MockValue[] {
 type MockSetClause = { col: string; isParam: boolean; literal: SqlParam };
 
 function mockParseSetClauses(sql: string): MockSetClause[] {
-  const m = sql.match(/SET\s+(.+?)\s+WHERE/i);
+  // Normalize whitespace so multi-line SQL is parsed correctly.
+  // The mock's regexes assume single-line SQL; the real SQL we
+  // generate uses multi-line formatting for readability.
+  const normalized = sql.replace(/\s+/g, ' ');
+  const m = normalized.match(/SET\s+(.+?)\s+WHERE/i);
   if (!m || !m[1]) return [];
   return m[1].split(',').map((piece): MockSetClause => {
     const [colRaw, valRaw] = piece.split('=');
@@ -175,19 +181,23 @@ type MockFilter = {
   col: string;
   isParam: boolean;
   literal: SqlParam | string[] | null;
-  op: '=' | '!=' | '<>' | 'IN_LIST';
+  op: '=' | '!=' | '<>' | 'IN_LIST' | '<' | '>' | '<=' | '>=';
 };
 
 function mockParseWhereFilter(sql: string): MockFilter[] {
-  const whereIdx = sql.toUpperCase().indexOf('WHERE');
+  // Normalize whitespace so multi-line SQL is parsed correctly.
+  const normalized = sql.replace(/\s+/g, ' ');
+  const whereIdx = normalized.toUpperCase().indexOf('WHERE');
   if (whereIdx === -1) return [];
-  const rest = sql.slice(whereIdx + 5);
+  const rest = normalized.slice(whereIdx + 5);
   const orderIdx = rest.toUpperCase().indexOf('ORDER');
   const where = orderIdx === -1 ? rest : rest.slice(0, orderIdx);
   const parts = where.split(/\s+AND\s+/i);
   return parts
     .map((p): MockFilter => {
-      const m = p.match(/(\w+)\s*(=|!=|<>|IN)\s*(\?|'[^']*'|\d+|\([^)]+\))/i);
+      const m = p.match(
+        /(\w+)\s*(=|!=|<>|IN|<=|>=|<|>)\s*(\?|'[^']*'|\d+|\([^)]+\))/i,
+      );
       if (!m || !m[1] || !m[2] || !m[3]) {
         return { col: '', isParam: false, literal: null, op: '=' };
       }
@@ -198,7 +208,15 @@ function mockParseWhereFilter(sql: string): MockFilter[] {
           ? '!='
           : opRaw === 'IN'
             ? 'IN_LIST'
-            : '=';
+            : opRaw === '<'
+              ? '<'
+              : opRaw === '>'
+                ? '>'
+                : opRaw === '<='
+                  ? '<='
+                  : opRaw === '>='
+                    ? '>='
+                    : '=';
       const v = m[3];
       if (v === '?') return { col, isParam: true, literal: null, op };
       if (v.startsWith("'")) {
@@ -211,7 +229,7 @@ function mockParseWhereFilter(sql: string): MockFilter[] {
           .map((s) => s.trim().replace(/^['"]|['"]$/g, ''));
         return { col, isParam: false, literal: items, op };
       }
-      return { col, isParam: false, literal: v, op };
+      return { col, isParam: false, literal: Number(v) || v, op };
     })
     .filter((f) => f.col.length > 0);
 }
@@ -228,20 +246,27 @@ function mockRowMatches(
     const cell = row[filter.col];
     return items.includes(String(cell ?? ''));
   }
-  if (filter.isParam) {
-    const v = params[paramIdx.i];
-    paramIdx.i += 1;
-    if (filter.op === '=') {
-      return String(row[filter.col] ?? '') === String(v ?? '');
+  const cellValue = row[filter.col];
+  const rightValue = filter.isParam ? params[paramIdx.i] : filter.literal;
+  if (filter.isParam) paramIdx.i += 1;
+
+  if (filter.op === '<' || filter.op === '>' || filter.op === '<=' || filter.op === '>=') {
+    // Numeric comparison. Compare as numbers if both sides are numeric.
+    const left = Number(cellValue);
+    const right = Number(rightValue);
+    if (Number.isFinite(left) && Number.isFinite(right)) {
+      if (filter.op === '<') return left < right;
+      if (filter.op === '>') return left > right;
+      if (filter.op === '<=') return left <= right;
+      if (filter.op === '>=') return left >= right;
     }
-    return String(row[filter.col] ?? '') !== String(v ?? '');
+    return false;
   }
-  // Literal-side filter. Honor the operator.
-  const left = String(row[filter.col] ?? '');
-  const right = String(filter.literal ?? '');
-  if (filter.op === '!=') {
-    return left !== right;
-  }
+
+  const left = String(cellValue ?? '');
+  const right = String(rightValue ?? '');
+  if (filter.op === '=') return left === right;
+  if (filter.op === '!=') return left !== right;
   return left === right;
 }
 
@@ -267,7 +292,8 @@ function mockApplyFilter(
 }
 
 function mockParseOrderBy(sql: string): { col: string; dir: 'ASC' | 'DESC' } | null {
-  const m = sql.match(/ORDER\s+BY\s+(\w+)(?:\s+(ASC|DESC))?/i);
+  const normalized = sql.replace(/\s+/g, ' ');
+  const m = normalized.match(/ORDER\s+BY\s+(\w+)(?:\s+(ASC|DESC))?/i);
   if (!m || !m[1]) return null;
   return { col: m[1], dir: m[2]?.toUpperCase() === 'DESC' ? 'DESC' : 'ASC' };
 }
@@ -313,6 +339,27 @@ jest.mock('expo-sqlite', () => {
             }
           }
           const targetRows = tables.rowsFor(table);
+          // ON CONFLICT(key) DO UPDATE: detect and replace matching
+          // row in place. The mock doesn't enforce UNIQUE
+          // constraints natively, so we honor the upsert shape
+          // explicitly.
+          if (/ON\s+CONFLICT/i.test(sql)) {
+            const conflictMatch = sql.match(
+              /ON\s+CONFLICT\s*\(\s*(\w+)\s*\)/i,
+            );
+            const conflictCol = conflictMatch?.[1];
+            if (conflictCol) {
+              const existingIdx = targetRows.findIndex(
+                (r) => r[conflictCol] === newRow[conflictCol],
+              );
+              if (existingIdx !== -1) {
+                // Replace the existing row, keeping its `id`.
+                newRow.id = targetRows[existingIdx]?.id;
+                targetRows[existingIdx] = { ...newRow };
+                return { changes: 1, lastInsertRowId: newRow.id ?? 0 };
+              }
+            }
+          }
           // AUTOINCREMENT integer keys: assign an `id` if the row
           // doesn't already have one.
           if (newRow.id === undefined) {
