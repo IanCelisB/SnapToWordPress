@@ -35,6 +35,9 @@ importers:
       expo-image-picker:
         specifier: 56.0.16
         version: 56.0.16(expo@56.0.4)
+      expo-linking:
+        specifier: ~56.0.13
+        version: 56.0.13(expo@56.0.4)(react-native@0.85.2(@babel/core@7.25.9)(@react-native/jest-preset@0.85.3(@babel/core@7.25.9)(react@19.2.0))(@types/react@19.2.0)(react@19.2.0))(react@19.2.0)
       expo-network:
         specifier: 56.0.5
         version: 56.0.5(expo@56.0.4)(react@19.2.0)
