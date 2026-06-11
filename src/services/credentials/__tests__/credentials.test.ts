@@ -48,7 +48,7 @@ function fakeHttp(
         body: r.body,
         headers: new Headers(),
       };
-    }),
+    }) as unknown as HttpClient['request'],
     __setFetcher: () => undefined,
   };
 }

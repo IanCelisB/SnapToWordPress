@@ -7,6 +7,7 @@
 // sums file sizes.
 
 import * as FileSystem from 'expo-file-system';
+import { Paths } from 'expo-file-system';
 
 export type DirSize = {
   bytes: number;
@@ -15,7 +16,7 @@ export type DirSize = {
 };
 
 export function documentDirectory(): string | null {
-  return FileSystem.documentDirectory ?? null;
+  return Paths.document.uri ?? null;
 }
 
 /**
@@ -28,7 +29,7 @@ export async function getDirSize(): Promise<DirSize> {
   if (!dir) {
     return { bytes: 0, megabytes: 0, fileCount: 0 };
   }
-  const info = await FileSystem.getInfoAsync(dir, { size: true });
+  const info = await FileSystem.getInfoAsync(dir);
   if (!info.exists || !info.isDirectory) {
     return { bytes: 0, megabytes: 0, fileCount: 0 };
   }

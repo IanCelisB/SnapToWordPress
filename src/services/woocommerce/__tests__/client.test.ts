@@ -32,7 +32,7 @@ function fakeHttp(
       }
       i += 1;
       return { status: r.status, ok: r.status >= 200 && r.status < 300, body: r.body, headers: new Headers() };
-    }),
+    }) as unknown as HttpClient['request'],
     __setFetcher: () => undefined,
   };
 }
@@ -163,7 +163,7 @@ describe('buildAuthHeader', () => {
   it('produces an Authorization: Basic <base64> header', () => {
     const h = buildAuthHeader('ck_abc', 'cs_def');
     expect(h.Authorization).toMatch(/^Basic /);
-    const token = h.Authorization.split(' ')[1] ?? '';
+    const token = h.Authorization!.split(' ')[1] ?? '';
     // base64 of 'ck_abc:cs_def'
     const decoded =
       typeof atob === 'function'

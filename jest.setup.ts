@@ -11,7 +11,6 @@ if (typeof globalThis.crypto === 'undefined') {
   globalThis.crypto = {};
 }
 if (typeof globalThis.crypto.randomUUID !== 'function') {
-  // @ts-expect-error - assigning polyfill in test env only
   globalThis.crypto.randomUUID = () => randomUUID();
 }
 
@@ -377,7 +376,7 @@ jest.mock('expo-sqlite', () => {
                   return { changes: 0, lastInsertRowId: targetRows[existingIdx]?.id ?? 0 };
                 }
                 // REPLACE / DO UPDATE: replace the existing row.
-                newRow.id = targetRows[existingIdx]?.id;
+                newRow.id = targetRows[existingIdx]?.id ?? null;
                 targetRows[existingIdx] = { ...newRow };
                 return { changes: 1, lastInsertRowId: newRow.id ?? 0 };
               }
@@ -540,7 +539,7 @@ jest.mock('expo-sqlite', () => {
       ),
       closeAsync: jest.fn(async () => undefined),
       withTransactionAsync: jest.fn(
-        async <T,>(fn: (tx: typeof handle) => Promise<T>): Promise<T> => fn(handle),
+        async (fn: () => Promise<void>): Promise<void> => fn(),
       ),
     };
     return handle;

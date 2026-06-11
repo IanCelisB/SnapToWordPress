@@ -93,7 +93,7 @@ describe('migrations', () => {
       __raw: {},
     };
     await expect(
-      runMigrations(failingDb as unknown as Awaited<typeof openDB>),
+      runMigrations(failingDb as unknown as Awaited<ReturnType<typeof openDB>>),
     ).rejects.toThrow(/Migration to v1 failed/);
 
     // The DB still reports v0 (the transaction rolled back; the

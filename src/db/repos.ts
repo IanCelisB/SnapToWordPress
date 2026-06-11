@@ -14,6 +14,7 @@
 
 import { now as defaultNow } from '../infra/clock';
 import type {
+  ErrorKey,
   MediaUpload,
   NewProduct,
   NewProductImage,
@@ -130,13 +131,13 @@ export const queueRepo = {
     nextAttemptAt: number,
     errorKey: string,
   ): Promise<void> =>
-    QueueTable.failItem(db, productLocalId, nextAttemptAt, errorKey as QueueItem['lastErrorKey']),
+    QueueTable.failItem(db, productLocalId, nextAttemptAt, errorKey as ErrorKey),
   markFailed: (
     db: DB,
     productLocalId: string,
     errorKey: string,
   ): Promise<void> =>
-    QueueTable.markFailed(db, productLocalId, errorKey as QueueItem['lastErrorKey']),
+    QueueTable.markFailed(db, productLocalId, errorKey as ErrorKey),
   list: (db: DB): Promise<ReadonlyArray<QueueItem>> =>
     QueueTable.listQueued(db),
   getForProduct: (db: DB, productLocalId: string): Promise<QueueItem | null> =>

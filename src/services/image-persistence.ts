@@ -9,6 +9,7 @@
 // what the sync worker reads in WU-4.
 
 import * as FileSystem from 'expo-file-system';
+import { Paths } from 'expo-file-system';
 import { uuid } from '../infra/uuid';
 
 export type PersistResult = {
@@ -31,7 +32,7 @@ export async function persistCapturedImage(
   sourceUri: string,
   localId: string = uuid(),
 ): Promise<PersistResult> {
-  const docs = FileSystem.documentDirectory ?? null;
+  const docs = Paths.document.uri ?? null;
   if (!docs) {
     return { filePath: sourceUri, size: 0 };
   }

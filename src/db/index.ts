@@ -85,9 +85,8 @@ function wrap(raw: SQLite.SQLiteDatabase): DB {
       // SAME shape (`tx`) as the outer DB so the migration runner
       // and the worker's helpers can be written once.
       let outcome!: T;
-      await raw.withTransactionAsync(async (txHandle) => {
-        const tx = wrap(txHandle as unknown as SQLite.SQLiteDatabase);
-        outcome = await fn(tx);
+      await raw.withTransactionAsync(async () => {
+        outcome = await fn(db);
       });
       return outcome;
     },
