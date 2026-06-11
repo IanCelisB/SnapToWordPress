@@ -22,7 +22,6 @@
     "expo-constants": "56.0.4",
     "expo-crypto": "56.0.4",
     "expo-file-system": "56.0.7",
-    "expo-image-manipulator": "^56.0.17",
     "expo-image-picker": "56.0.16",
     "expo-linking": "~56.0.13",
     "expo-network": "56.0.5",
