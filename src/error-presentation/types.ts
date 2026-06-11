@@ -53,7 +53,7 @@ export type ClassifiedError = {
 export class WooError extends Error {
   readonly status?: number;
   readonly body?: unknown;
-  readonly cause?: unknown;
+  override readonly cause?: unknown;
   constructor(opts: {
     message: string;
     status?: number;
@@ -82,7 +82,7 @@ export class ValidationError extends Error {
 export class MigrationError extends Error {
   constructor(
     message: string,
-    public readonly cause?: unknown,
+    public override readonly cause?: unknown,
   ) {
     super(message);
     this.name = 'MigrationError';

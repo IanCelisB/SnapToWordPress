@@ -81,6 +81,32 @@ export const Strings = {
   editApprove: 'Aprobar',
   editApproveDisabled: 'Confirmá el precio primero',
 
+  // Edit screen — status pills
+  pillPending: 'Pendiente',
+  pillReady: 'Listo',
+  pillSyncing: 'Sincronizando',
+  pillSynced: 'Sincronizado',
+  pillFailed: 'Con error',
+  pillNeedsAttention: 'Necesita atención',
+
+  // Edit screen — price confirm gate
+  editPriceGateTitle: 'Precio a confirmar',
+  editPriceGateOriginal: 'Precio original',
+  editPriceGateNew: 'Precio actual',
+  editPriceGateConfirm: 'Confirmar precio',
+  editPriceGateConfirmed: 'Precio confirmado',
+  editPriceGateEdit: 'Editar precio',
+
+  // Edit screen — fields and publish
+  editFieldName: 'Nombre del producto',
+  editFieldPrice: 'Precio',
+  editFieldCategory: 'Categoría',
+  editFieldDescription: 'Descripción (opcional)',
+  editPublishTitle: 'Publicar al sincronizar',
+  editPublishHint: 'Se va a publicar apenas termine la sincronización.',
+  editPublishDraft: 'Queda como borrador hasta que decidas publicarlo.',
+  editDelete: 'Eliminar',
+
   // Sync screen
   syncTitle: 'Sincronización',
   syncPause: 'Pausar',

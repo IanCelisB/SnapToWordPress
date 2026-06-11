@@ -115,7 +115,7 @@ export default function RootLayout(): React.ReactElement {
 
 const styles = StyleSheet.create({
   splash: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.bg,

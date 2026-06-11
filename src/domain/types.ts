@@ -11,6 +11,7 @@
 // import and side-effect free.
 
 import type { ErrorKey } from '../error-presentation/types';
+export type { ErrorKey };
 
 export type ProductStatus =
   | 'pending'

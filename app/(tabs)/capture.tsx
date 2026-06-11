@@ -428,7 +428,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.lg,
-    paddingHorizontal: spacing.lg,
   },
   placeholderText: { color: colors.muted, textAlign: 'center', fontSize: 14 },
   row: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
