@@ -83,8 +83,8 @@ export default function RootLayout(): React.ReactElement {
           if (cancelled) return;
         }
 
-        setBootStage(creds ? 'route:tabs' : 'route:onboarding');
-        setRoute(creds ? 'tabs' : 'onboarding');
+        setBootStage('route:tabs');
+        setRoute('tabs');
       } catch (err) {
         if (cancelled) return;
         const msg = err instanceof Error
