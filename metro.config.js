@@ -27,4 +27,12 @@ module.exports = withNativeWind(config, {
   // inputs; keeping the v3 paths so a future WU-5 polish pass doesn't have
   // to remember to update this.
   input: './app/**/*.{js,jsx,ts,tsx}',
+  resolver: {
+    // expo-sqlite@56 ships a `wa-sqlite.wasm` that its web worker imports
+    // (see `expo-sqlite/web/worker.ts` line 22). Metro needs to know to
+    // treat it as a static asset — not a source module — so the dev server
+    // can serve it and a release build can package it. Without this, the
+    // web bundle fails with "Unable to resolve module ./wa-sqlite/wa-sqlite.wasm".
+    assetExts: [...config.resolver.assetExts, 'wasm'],
+  },
 });
