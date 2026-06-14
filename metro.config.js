@@ -23,13 +23,18 @@ const { withNativeWind } = require('nativewind/metro');
 const config = getDefaultConfig(__dirname);
 
 // expo-sqlite@56 ships a `wa-sqlite.wasm` that its web worker imports
-// (see `expo-sqlite/web/worker.ts` line 22). Metro needs to know to
-// treat it as a static asset — not a source module — so the dev server
-// can serve it and a release build can package it. Without this, the
-// web bundle fails with "Unable to resolve module ./wa-sqlite/wa-sqlite.wasm".
+// (see `expo-sqlite/web/worker.ts` line 22). Metro needs `.wasm` in BOTH:
+//   - `sourceExts` so the resolver can LOCATE the file on disk (otherwise
+//     it treats "wa-sqlite.wasm" as a bare module name and tries
+//     "wa-sqlite.wasm.ts" / ".tsx" / ".js" / etc., none of which exist).
+//   - `assetExts` so the resolver can CLASSIFY it as a static asset
+//     (so Metro serves the binary instead of trying to parse it as JS).
+// `assetExts` alone is NOT enough: it only classifies files that the
+// resolver already found. `sourceExts` does the actual finding.
 // Mutating in place is required: `withNativeWind` does not merge a
 // `resolver` field passed in its options.
 config.resolver.assetExts.push('wasm');
+config.resolver.sourceExts.push('wasm');
 
 module.exports = withNativeWind(config, {
   // Re-scan the source tree for `className` occurrences. v4 supports glob
