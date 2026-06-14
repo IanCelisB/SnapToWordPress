@@ -108,7 +108,9 @@ export default function RootLayout(): React.ReactElement {
   // components stay registered (see file header).
   useEffect(() => {
     if (route === 'loading') return;
-    const target = route === 'tabs' ? '/(tabs)' : `/${route}`;
+    // `(tabs)` is a route group, not a screen — expo-router will show
+    // "Unmatched Route" if we target it. Land on the default tab instead.
+    const target = route === 'tabs' ? '/(tabs)/capturar' : `/${route}`;
     try {
       setBootStage(`navigate:${target}`);
       router.replace(target as never);
