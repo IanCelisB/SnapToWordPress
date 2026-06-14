@@ -7,13 +7,19 @@
 //   - Otherwise: hidden
 //
 // Tap navigates to `/sync`. All strings from `src/ui/strings.ts`.
+// Uses the new theme tokens + `errorCard`/`accentSoft` style.
 
 import { useCallback } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSyncStore } from '../../stores/syncStore';
 import { Strings } from '../strings';
-import { colors, radius, spacing } from '../theme';
+import {
+  colors,
+  radius,
+  spacing,
+  typography,
+} from '../theme';
 
 export function SyncBanner(): React.ReactElement | null {
   const router = useRouter();
@@ -30,12 +36,12 @@ export function SyncBanner(): React.ReactElement | null {
     return (
       <Pressable
         onPress={handlePress}
-        style={styles.banner}
+        style={[styles.banner, styles.bannerRunning]}
         accessibilityRole="button"
         testID="sync-banner.running"
       >
         <View style={styles.content}>
-          <Text style={styles.text}>
+          <Text style={[styles.text, { color: colors.info }]}>
             {Strings.syncBannerRunning.replace(
               '{n}',
               String(progress.total),
@@ -56,7 +62,7 @@ export function SyncBanner(): React.ReactElement | null {
         testID="sync-banner.blocked"
       >
         <View style={styles.content}>
-          <Text style={styles.text}>
+          <Text style={[styles.text, { color: colors.error }]}>
             {Strings.syncBannerBlocked.replace(
               '{n}',
               String(blockedCount),
@@ -73,27 +79,28 @@ export function SyncBanner(): React.ReactElement | null {
 
 const styles = StyleSheet.create({
   banner: {
-    backgroundColor: colors.accent + '14',
-    borderColor: colors.accent + '40',
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.md,
   },
+  bannerRunning: {
+    borderColor: colors.accent,
+    backgroundColor: colors.accentSoft,
+  },
   bannerBlocked: {
-    backgroundColor: colors.warning + '14',
-    borderColor: colors.warning + '40',
+    borderColor: colors.error,
+    backgroundColor: colors.errorSoft,
   },
   content: {
     gap: spacing.xs,
   },
   text: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
+    ...typography.bodyEmphasis,
   },
   hint: {
-    fontSize: 12,
-    color: colors.muted,
+    ...typography.caption,
+    color: colors.textMuted,
   },
 });

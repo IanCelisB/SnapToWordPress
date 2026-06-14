@@ -10,6 +10,11 @@
 //
 // Tailwind v3 globs are still honoured: the v4 `content` config in
 // `tailwind.config.js` points at the same files v3 did.
+//
+// expo-secure-store web shim:
+// The expo-secure-store package ships an empty stub for its native bridge
+// on web. We patched the web stub directly in node_modules (see
+// src/infra/secure-store-web-bridge.ts for the canonical version).
 
 const { getDefaultConfig } = require('expo/metro-config');
 const { withNativeWind } = require('nativewind/metro');

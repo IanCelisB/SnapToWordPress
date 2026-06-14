@@ -13,15 +13,7 @@
 // products. This matches the orchestrator's WU-2 brief.
 
 import { useCallback, useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -33,7 +25,9 @@ import {
   validateAndSave,
 } from '@/services/credentials';
 import { getDirSize, type DirSize } from '@/infra/file-system';
-import { colors, radius, spacing } from '@/ui/theme';
+import { Strings } from '@/ui/strings';
+import { Button, FieldRow, Header, Input, Section } from '@/ui/primitives';
+import { colors, spacing, typography } from '@/ui/theme';
 
 type Mode = 'idle' | 'reconnecting' | 'replacing' | 'signing-out';
 
@@ -49,18 +43,26 @@ export default function Settings(): React.ReactElement {
   const [replaceUrl, setReplaceUrl] = useState('');
   const [replaceKey, setReplaceKey] = useState('');
   const [replaceSecret, setReplaceSecret] = useState('');
+  const [replaceError, setReplaceError] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     (async () => {
-      const creds = await loadCredentials();
-      setHasCreds(creds !== null);
-      setStoreUrl(creds?.baseUrl ?? null);
-      setReplaceUrl(creds?.baseUrl ?? '');
-      // We DO NOT pre-fill the secret — re-entering it is the safer
-      // default. The user can paste the new one.
-      setReplaceKey(creds?.key ?? '');
-      setReplaceSecret('');
-      setDirSize(await getDirSize());
+      try {
+        const creds = await loadCredentials();
+        setHasCreds(creds !== null);
+        setStoreUrl(creds?.baseUrl ?? null);
+        setReplaceUrl(creds?.baseUrl ?? '');
+        setReplaceKey(creds?.key ?? '');
+        setReplaceSecret('');
+      } catch {
+        setHasCreds(false);
+        setStoreUrl(null);
+      }
+      try {
+        setDirSize(await getDirSize());
+      } catch {
+        setDirSize({ bytes: 0, megabytes: 0, fileCount: 0 });
+      }
     })();
   }, []);
 
@@ -81,10 +83,9 @@ export default function Settings(): React.ReactElement {
 
   const handleReplace = useCallback(async () => {
     setError(null);
+    setReplaceError(undefined);
     if (!replaceUrl.trim() || !replaceKey.trim() || !replaceSecret.trim()) {
-      setError(
-        presentError('datos-invalidos', { field: 'credenciales', reason: 'required' }),
-      );
+      setReplaceError('Completá todos los campos');
       return;
     }
     setMode('replacing');
@@ -98,6 +99,7 @@ export default function Settings(): React.ReactElement {
         setStoreUrl(result.normalizedUrl);
         setReplaceUrl(result.normalizedUrl);
         setHasCreds(true);
+        setReplaceSecret('');
         return;
       }
       setError(presentError(result.classification));
@@ -115,10 +117,6 @@ export default function Settings(): React.ReactElement {
       await clearCredentials();
       setHasCreds(false);
       setStoreUrl(null);
-      // The local DB is INTENTIONALLY preserved. The user can re-link
-      // the same store without losing pending products. The first-launch
-      // routing will detect no creds on next mount and route to
-      // /onboarding.
       router.replace('/onboarding');
     } finally {
       setMode('idle');
@@ -129,8 +127,10 @@ export default function Settings(): React.ReactElement {
     return (
       <SafeAreaView style={styles.safe}>
         <View style={styles.center}>
-          <Text style={styles.title}>Sin tienda vinculada</Text>
-          <Text style={styles.muted}>Volvé a la pantalla de bienvenida para conectar una tienda.</Text>
+          <Text style={typography.h2}>Sin tienda vinculada</Text>
+          <Text style={styles.muted}>
+            Volvé a la pantalla de bienvenida para conectar una tienda.
+          </Text>
         </View>
       </SafeAreaView>
     );
@@ -139,63 +139,69 @@ export default function Settings(): React.ReactElement {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.title}>Ajustes</Text>
+        <Header title="Ajustes" compact />
 
-        <Section title="Tienda actual">
-          <Text style={styles.url} testID="settings.url">{storeUrl ?? '—'}</Text>
-          <Pressable
+        {/* Tienda actual */}
+        <Section title="Tienda actual" testID="settings.section.store">
+          <FieldRow label="URL" value={storeUrl ?? '—'} testID="settings.url" />
+          <Button
+            label="Reconectar tienda"
             onPress={handleReconnect}
+            loading={mode === 'reconnecting'}
             disabled={mode !== 'idle'}
-            style={[styles.button, styles.buttonSecondary]}
+            variant="secondary"
+            fullWidth
             testID="settings.reconnect"
-          >
-            {mode === 'reconnecting' ? (
-              <ActivityIndicator color={colors.text} />
-            ) : (
-              <Text style={styles.buttonSecondaryText}>Reconectar tienda</Text>
-            )}
-          </Pressable>
+            style={styles.reconnect}
+          />
         </Section>
 
-        <Section title="Reemplazar credenciales">
-          <FormRow
+        {/* Reemplazar credenciales */}
+        <Section title="Reemplazar credenciales" testID="settings.section.replace">
+          <Input
             label="URL"
             value={replaceUrl}
             onChangeText={setReplaceUrl}
             placeholder="https://mitienda.com"
+            autoCapitalize="none"
+            autoCorrect={false}
             testID="settings.replace.url"
           />
-          <FormRow
+          <Input
             label="Consumer Key"
             value={replaceKey}
             onChangeText={setReplaceKey}
             placeholder="ck_xxxxx"
-            secure
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
             testID="settings.replace.key"
           />
-          <FormRow
+          <Input
             label="Consumer Secret"
             value={replaceSecret}
             onChangeText={setReplaceSecret}
             placeholder="cs_xxxxx"
-            secure
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
             testID="settings.replace.secret"
+            errorText={replaceError}
           />
-          <Pressable
+          <Button
+            label="Guardar"
             onPress={handleReplace}
+            loading={mode === 'replacing'}
             disabled={mode !== 'idle'}
-            style={[styles.button, styles.buttonPrimary]}
+            variant="primary"
+            fullWidth
             testID="settings.replace.submit"
-          >
-            {mode === 'replacing' ? (
-              <ActivityIndicator color={colors.surface} />
-            ) : (
-              <Text style={styles.buttonPrimaryText}>Guardar</Text>
-            )}
-          </Pressable>
+            style={styles.submit}
+          />
         </Section>
 
-        <Section title="Almacenamiento">
+        {/* Almacenamiento */}
+        <Section title="Almacenamiento" testID="settings.section.storage">
           <Text style={styles.muted}>
             {dirSize
               ? `~${dirSize.megabytes} MB usados para fotos`
@@ -206,23 +212,22 @@ export default function Settings(): React.ReactElement {
           </Text>
         </Section>
 
-        <Section title="Cerrar sesión">
+        {/* Cerrar sesión */}
+        <Section title="Cerrar sesión" testID="settings.section.signout">
           <Text style={styles.muted}>
             Vamos a borrar las credenciales. Los productos que todavía no
             subiste siguen en el teléfono, no se pierden.
           </Text>
-          <Pressable
+          <Button
+            label="Cerrar sesión"
             onPress={handleSignOut}
+            loading={mode === 'signing-out'}
             disabled={mode !== 'idle'}
-            style={[styles.button, styles.buttonDanger]}
+            variant="danger"
+            fullWidth
             testID="settings.signout"
-          >
-            {mode === 'signing-out' ? (
-              <ActivityIndicator color={colors.surface} />
-            ) : (
-              <Text style={styles.buttonDangerText}>Cerrar sesión</Text>
-            )}
-          </Pressable>
+            style={styles.signout}
+          />
         </Section>
 
         {error ? (
@@ -236,105 +241,31 @@ export default function Settings(): React.ReactElement {
   );
 }
 
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}): React.ReactElement {
-  return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      {children}
-    </View>
-  );
-}
-
-function FormRow({
-  label,
-  value,
-  onChangeText,
-  placeholder,
-  secure,
-  testID,
-}: {
-  label: string;
-  value: string;
-  onChangeText: (v: string) => void;
-  placeholder: string;
-  secure?: boolean;
-  testID?: string;
-}): React.ReactElement {
-  return (
-    <View style={styles.field}>
-      <Text style={styles.label}>{label}</Text>
-      <TextInput
-        style={styles.input}
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor={colors.muted}
-        secureTextEntry={secure}
-        autoCapitalize="none"
-        autoCorrect={false}
-        testID={testID}
-      />
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
-  scroll: { padding: spacing.lg, paddingBottom: spacing.xxl },
+  scroll: { padding: spacing.lg, paddingBottom: spacing.xxxl },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.lg },
-  title: { fontSize: 26, fontWeight: '600', color: colors.text, marginBottom: spacing.lg },
-  section: { marginBottom: spacing.xl },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.muted,
-    marginBottom: spacing.sm,
-  },
-  url: { fontSize: 16, color: colors.text, marginBottom: spacing.md },
-  field: { marginBottom: spacing.md },
-  label: { fontSize: 14, color: colors.muted, marginBottom: spacing.xs },
-  input: {
-    backgroundColor: colors.surface,
-    borderColor: colors.line,
-    borderWidth: 1,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    fontSize: 16,
-    color: colors.text,
-  },
-  button: {
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
-    alignItems: 'center',
-  },
-  buttonPrimary: { backgroundColor: colors.accent },
-  buttonPrimaryText: { color: colors.surface, fontWeight: '600' },
-  buttonSecondary: { backgroundColor: colors.surface, borderColor: colors.line, borderWidth: 1 },
-  buttonSecondaryText: { color: colors.text },
-  buttonDanger: { backgroundColor: colors.error },
-  buttonDangerText: { color: colors.surface, fontWeight: '600' },
-  muted: { fontSize: 14, color: colors.muted, marginBottom: spacing.md, lineHeight: 20 },
-  mutedSmall: { fontSize: 12, color: colors.muted, marginTop: -spacing.xs },
+  muted: { ...typography.caption, color: colors.textMuted, marginBottom: spacing.md, lineHeight: 20 },
+  mutedSmall: { ...typography.caption, color: colors.textMuted, marginTop: -spacing.xs },
+  reconnect: { marginTop: spacing.md },
+  submit: { marginTop: spacing.sm },
+  signout: { marginTop: spacing.md },
   errorCard: {
-    backgroundColor: colors.surface,
-    borderColor: colors.line,
+    backgroundColor: colors.errorSoft,
+    borderColor: colors.error,
     borderWidth: 1,
-    borderRadius: radius.md,
+    borderRadius: 10,
     padding: spacing.md,
     marginTop: spacing.lg,
   },
   errorTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    ...typography.bodyEmphasis,
     color: colors.error,
     marginBottom: spacing.xs,
   },
-  errorMessage: { fontSize: 14, color: colors.text, lineHeight: 20 },
+  errorMessage: {
+    ...typography.caption,
+    color: colors.text,
+    lineHeight: 20,
+  },
 });

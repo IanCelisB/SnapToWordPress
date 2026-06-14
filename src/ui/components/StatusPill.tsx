@@ -5,11 +5,19 @@
 // map. The wording is NOT in the error catalog because status pills
 // are happy-path labels, not recoverable failures. Adding a new
 // state here is a UI change, not a catalog change.
+//
+// Uses the new theme tokens: `micro` typography for the label and
+// semantic color pairs (`*` for foreground, `*Soft` for background).
 
 import { StyleSheet, Text, View } from 'react-native';
 import type { ProductStatus } from '../../domain/types';
 import { Strings } from '../strings';
-import { colors, radius, spacing } from '../theme';
+import {
+  colors,
+  radius,
+  spacing,
+  typography,
+} from '../theme';
 
 export type StatusPillProps = {
   status: ProductStatus;
@@ -62,18 +70,20 @@ function labelFor(status: ProductStatus, priceUnconfirmed: boolean): string {
 }
 
 function paletteFor(status: ProductStatus): { bg: string; fg: string } {
+  // Semantic pairs from the theme: soft variant for the background,
+  // strong variant for the foreground text.
   switch (status) {
     case 'pending':
-      return { bg: '#FEF3C7', fg: '#92400E' };
+      return { bg: colors.warningSoft, fg: colors.warning };
     case 'ready':
-      return { bg: '#DBEAFE', fg: '#1E3A8A' };
+      return { bg: colors.accentSoft, fg: colors.info };
     case 'syncing':
-      return { bg: '#E0E7FF', fg: '#3730A3' };
+      return { bg: '#E0E7FF', fg: colors.info };
     case 'synced':
-      return { bg: '#DCFCE7', fg: '#166534' };
+      return { bg: colors.successSoft, fg: colors.success };
     case 'failed':
     case 'needs-attention':
-      return { bg: '#FEE2E2', fg: '#991B1B' };
+      return { bg: colors.errorSoft, fg: colors.error };
     default: {
       const _exhaustive: never = status;
       return _exhaustive;
@@ -85,9 +95,10 @@ const styles = StyleSheet.create({
   pill: {
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
-    borderRadius: radius.sm,
+    borderRadius: radius.full,
     alignSelf: 'flex-start',
   },
-  text: { fontSize: 12, fontWeight: 'bold' },
+  text: {
+    ...typography.micro,
+  },
 });
-

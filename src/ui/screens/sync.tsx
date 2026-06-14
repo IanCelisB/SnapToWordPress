@@ -2,29 +2,34 @@
 // §5 + sync-trigger spec).
 //
 // Layout (per the spec's "one primary action per screen" rule):
-//   - Progress line at the top: "Subiendo producto N de M..."
-//     only when the worker is running.
+//   - Header + subtitle at the top.
+//   - Progress line: "Subiendo producto N de M..." when running.
 //   - Pause toggle: global, persisted in app_config.
 //   - "Sincronizar ahora" primary button (disabled while running).
 //   - Calm hint area: "No hay productos pendientes" /
 //     "La sincronización está pausada" / "Esperando Wi-Fi".
-//   - List of pending / active products (placeholder for v1).
 //
 // All strings come from `src/ui/strings.ts` — no inline Spanish
 // literals, ever. The progress line uses a templated string with
 // `{current}` / `{total}` placeholders.
+//
+// Uses the new design tokens + primitive components.
 
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Pressable,
+  ScrollView,
   StyleSheet,
+  Switch,
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { useSyncStore } from '../../stores/syncStore';
 import { Strings } from '../strings';
-import { colors, radius, spacing } from '../theme';
+import { Button, Card, Header } from '../primitives';
+import { colors, radius, spacing, typography } from '../theme';
 
 // The trigger instance is wired in `app/_layout.tsx`. The screen
 // reads it via a global accessor that the layout sets at boot
@@ -104,66 +109,58 @@ export default function SyncScreen(): React.ReactElement {
   })();
 
   return (
-    <View style={styles.container} testID="sync.screen">
-      <Text style={styles.title}>{Strings.syncTitle}</Text>
+    <SafeAreaView style={styles.safe}>
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <Header
+          title={Strings.syncTitle}
+          subtitle="Revisá el estado de la sincronización con tu tienda."
+        />
 
-      {showProgress ? (
-        <View style={styles.progressBox} testID="sync.progress">
-          <ActivityIndicator color={colors.accent} />
-          <Text style={styles.progressText}>{progressText}</Text>
-        </View>
-      ) : null}
+        {showProgress ? (
+          <Card padding="md" testID="sync.progress" style={styles.progressCard}>
+            <ActivityIndicator color={colors.accent} />
+            <Text style={styles.progressText}>{progressText}</Text>
+          </Card>
+        ) : null}
 
-      {hint !== null ? (
-        <Text style={styles.hint} testID="sync.hint">
-          {hint}
-        </Text>
-      ) : null}
+        {hint !== null ? (
+          <Text style={styles.hint} testID="sync.hint">
+            {hint}
+          </Text>
+        ) : null}
 
-      {lastSyncAt !== null ? (
-        <Text style={styles.lastSync}>
-          {Strings.syncLast.replace('{at}', formatLastSync(lastSyncAt))}
-        </Text>
-      ) : null}
+        {lastSyncAt !== null ? (
+          <Text style={styles.lastSync}>
+            {Strings.syncLast.replace('{at}', formatLastSync(lastSyncAt))}
+          </Text>
+        ) : null}
 
-      <View style={styles.pauseRow}>
-        <Text style={styles.pauseLabel}>
-          {paused ? Strings.syncResume : Strings.syncPause}
-        </Text>
-        <Pressable
-          accessibilityRole="switch"
-          accessibilityState={{ checked: paused }}
-          onPress={handleTogglePause}
-          style={[
-            styles.toggle,
-            paused ? styles.toggleOn : styles.toggleOff,
-          ]}
-          testID="sync.pause.toggle"
-        >
-          <View
-            style={[
-              styles.toggleKnob,
-              paused ? styles.toggleKnobOn : styles.toggleKnobOff,
-            ]}
-          />
-        </Pressable>
-      </View>
+        <Card padding="md" testID="sync.pause.card">
+          <View style={styles.pauseRow}>
+            <Text style={styles.pauseLabel}>
+              {paused ? Strings.syncResume : Strings.syncPause}
+            </Text>
+            <Switch
+              value={paused}
+              onValueChange={handleTogglePause}
+              testID="sync.pause.toggle"
+            />
+          </View>
+        </Card>
 
-      <Pressable
-        accessibilityRole="button"
-        disabled={isRunning || paused}
-        onPress={handleSyncNow}
-        style={[
-          styles.primaryButton,
-          (isRunning || paused) && styles.primaryButtonDisabled,
-        ]}
-        testID="sync.syncNow.button"
-      >
-        <Text style={styles.primaryButtonText}>
-          {isRunning ? Strings.syncSyncingShort : Strings.syncSyncNow}
-        </Text>
-      </Pressable>
-    </View>
+        <Button
+          label={isRunning ? Strings.syncSyncingShort : Strings.syncSyncNow}
+          onPress={handleSyncNow}
+          disabled={isRunning || paused}
+          loading={isRunning}
+          variant="primary"
+          size="lg"
+          fullWidth
+          testID="sync.syncNow.button"
+          style={styles.syncButton}
+        />
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -183,87 +180,40 @@ function formatLastSync(ts: number): string {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bg,
-    padding: spacing.lg,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: colors.text,
-    marginBottom: spacing.lg,
-  },
-  progressBox: {
+  safe: { flex: 1, backgroundColor: colors.bg },
+  scroll: { padding: spacing.lg, paddingBottom: spacing.xxxl },
+  progressCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    padding: spacing.md,
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
-    borderColor: colors.line,
-    borderWidth: 1,
     marginBottom: spacing.md,
   },
   progressText: {
-    fontSize: 15,
+    ...typography.bodyEmphasis,
     color: colors.text,
     flex: 1,
   },
   hint: {
-    fontSize: 14,
-    color: colors.muted,
+    ...typography.caption,
+    color: colors.textMuted,
     marginBottom: spacing.lg,
+    lineHeight: 20,
   },
   lastSync: {
-    fontSize: 12,
-    color: colors.muted,
+    ...typography.caption,
+    color: colors.textDisabled,
     marginBottom: spacing.lg,
   },
   pauseRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: spacing.md,
-    marginBottom: spacing.lg,
-    borderTopColor: colors.line,
-    borderTopWidth: 1,
-    borderBottomColor: colors.line,
-    borderBottomWidth: 1,
   },
   pauseLabel: {
-    fontSize: 16,
+    ...typography.bodyEmphasis,
     color: colors.text,
   },
-  toggle: {
-    width: 52,
-    height: 30,
-    borderRadius: 15,
-    padding: 3,
-    justifyContent: 'center',
-  },
-  toggleOn: { backgroundColor: colors.accent },
-  toggleOff: { backgroundColor: colors.line },
-  toggleKnob: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: colors.surface,
-  },
-  toggleKnobOn: { alignSelf: 'flex-end' },
-  toggleKnobOff: { alignSelf: 'flex-start' },
-  primaryButton: {
-    backgroundColor: colors.accent,
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
-    alignItems: 'center',
-  },
-  primaryButtonDisabled: {
-    backgroundColor: colors.line,
-  },
-  primaryButtonText: {
-    color: colors.surface,
-    fontWeight: 'bold',
-    fontSize: 16,
+  syncButton: {
+    marginTop: spacing.xl,
   },
 });

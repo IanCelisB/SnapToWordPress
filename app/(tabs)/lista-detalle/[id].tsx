@@ -1,4 +1,4 @@
-// app/(tabs)/queue/[id].tsx — per-product review/edit screen
+// app/(tabs)/lista-detalle/[id].tsx — per-product review/edit screen
 // (WU-3, review-queue spec R1-R5).
 //
 // Allows editing any field (name, price, category, description).
@@ -10,8 +10,7 @@
 // The "Eliminar de la cola" action is the only destructive flow and
 // is gated by an explicit `Alert` dialog (spec R5).
 //
-// All Spanish strings come from `src/ui/strings.ts` and the
-// error-presentation catalog.
+// Uses the new design tokens + primitive components.
 
 import { useCallback, useEffect, useState } from 'react';
 import {
@@ -22,7 +21,6 @@ import {
   StyleSheet,
   Switch,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -42,7 +40,8 @@ import {
 import { removeImageFile } from '@/services/image-persistence';
 import { Strings } from '@/ui/strings';
 import { PriceConfirmGate } from '@/ui/components/PriceConfirmGate';
-import { colors, radius, spacing } from '@/ui/theme';
+import { Button, Card, ErrorCard, FieldRow, Header, Input, Section } from '@/ui/primitives';
+import { colors, radius, spacing, typography } from '@/ui/theme';
 import type {
   Product,
   ProductImage,
@@ -58,9 +57,7 @@ export default function EditProduct(): React.ReactElement {
   > | null>(null);
   const [product, setProduct] = useState<Product | null>(null);
   const [images, setImages] = useState<ReadonlyArray<ProductImage>>([]);
-  const [categories, setCategories] = useState<ReadonlyArray<StoreCategory>>(
-    [],
-  );
+  const [categories, setCategories] = useState<ReadonlyArray<StoreCategory>>([]);
   const [name, setName] = useState('');
   const [price, setPrice] = useState('');
   const [description, setDescription] = useState('');
@@ -174,7 +171,6 @@ export default function EditProduct(): React.ReactElement {
     if (!store || !product) return;
     setBusy(true);
     try {
-      // Persist the new price first.
       const newPrice = Number(price);
       if (newPrice !== product.price) {
         const err = await store.getState().updateField(product.localId, {
@@ -260,10 +256,7 @@ export default function EditProduct(): React.ReactElement {
       <SafeAreaView style={styles.safe}>
         <View style={styles.center}>
           {error ? (
-            <View style={styles.errorCard}>
-              <Text style={styles.errorTitle}>{error.title}</Text>
-              <Text style={styles.errorMessage}>{error.message}</Text>
-            </View>
+            <ErrorCard title={error.title} message={error.message} />
           ) : (
             <ActivityIndicator color={colors.muted} />
           )}
@@ -277,151 +270,117 @@ export default function EditProduct(): React.ReactElement {
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.title}>{Strings.editTitle}</Text>
+        <Header title={Strings.editTitle} compact />
 
-        <Field
-          label={Strings.editFieldName}
-          value={name}
-          onChangeText={setName}
-          onBlur={handleNameBlur}
-          testID="edit.field.name"
-        />
-        <Field
-          label={Strings.editFieldPrice}
-          value={price}
-          onChangeText={handlePriceChange}
-          testID="edit.field.price"
-          keyboardType="number-pad"
-        />
-
-        <PriceConfirmGate
-          originalPrice={originalPrice}
-          currentPrice={Number(price) || 0}
-          priceConfirmed={priceConfirmed}
-          priceEdited={priceEdited}
-          onConfirm={handleConfirmPrice}
-          onEdit={handleEditPrice}
-        />
-
-        <Text style={styles.label}>{Strings.editFieldCategory}</Text>
-        <View style={styles.categoryPicker}>
-          {categories.map((c) => (
-            <Pressable
-              key={c.wcCategoryId}
-              onPress={() => handleCategorySelect(c.wcCategoryId, c.name)}
-              style={[
-                styles.chip,
-                categoryId === c.wcCategoryId && styles.chipActive,
-              ]}
-              testID={`edit.field.category.${c.wcCategoryId}`}
-            >
-              <Text
-                style={[
-                  styles.chipText,
-                  categoryId === c.wcCategoryId && styles.chipTextActive,
-                ]}
-              >
-                {c.name}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-
-        <Field
-          label={Strings.editFieldDescription}
-          value={description}
-          onChangeText={setDescription}
-          onBlur={handleDescriptionBlur}
-          testID="edit.field.description"
-          multiline
-        />
-
-        <View style={styles.publishRow}>
-          <View style={styles.publishBody}>
-            <Text style={styles.publishTitle}>{Strings.editPublishTitle}</Text>
-            <Text style={styles.publishHint}>
-              {publishOnSync
-                ? Strings.editPublishHint
-                : Strings.editPublishDraft}
-            </Text>
-          </View>
-          <Switch
-            value={publishOnSync}
-            onValueChange={handleTogglePublish}
-            testID="edit.field.publish"
+        <Section title="Datos">
+          <Input
+            label="Nombre"
+            value={name}
+            onChangeText={setName}
+            onBlur={handleNameBlur}
+            placeholder={Strings.editFieldName}
+            testID="edit.field.name"
+            multiline
           />
-        </View>
+          <Input
+            label={Strings.editFieldPrice}
+            value={price}
+            onChangeText={handlePriceChange}
+            placeholder="0"
+            testID="edit.field.price"
+            keyboardType="number-pad"
+          />
+
+          <PriceConfirmGate
+            originalPrice={originalPrice}
+            currentPrice={Number(price) || 0}
+            priceConfirmed={priceConfirmed}
+            priceEdited={priceEdited}
+            onConfirm={handleConfirmPrice}
+            onEdit={handleEditPrice}
+          />
+
+          <Text style={styles.label}>{Strings.editFieldCategory}</Text>
+          <View style={styles.categoryPicker}>
+            {categories.map((c) => (
+              <Pressable
+                key={c.wcCategoryId}
+                onPress={() => handleCategorySelect(c.wcCategoryId, c.name)}
+                style={[
+                  styles.chip,
+                  categoryId === c.wcCategoryId && styles.chipActive,
+                ]}
+                testID={`edit.field.category.${c.wcCategoryId}`}
+              >
+                <Text
+                  style={[
+                    styles.chipText,
+                    categoryId === c.wcCategoryId && styles.chipTextActive,
+                  ]}
+                >
+                  {c.name}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          <Input
+            label={Strings.editFieldDescription}
+            value={description}
+            onChangeText={setDescription}
+            onBlur={handleDescriptionBlur}
+            placeholder={Strings.editFieldDescription}
+            testID="edit.field.description"
+            multiline
+          />
+        </Section>
+
+        <Section title="Publicación">
+          <Card padding="md">
+            <View style={styles.publishRow}>
+              <View style={styles.publishBody}>
+                <Text style={styles.publishTitle}>{Strings.editPublishTitle}</Text>
+                <Text style={styles.publishHint}>
+                  {publishOnSync
+                    ? Strings.editPublishHint
+                    : Strings.editPublishDraft}
+                </Text>
+              </View>
+              <Switch
+                value={publishOnSync}
+                onValueChange={handleTogglePublish}
+                testID="edit.field.publish"
+              />
+            </View>
+          </Card>
+        </Section>
 
         {error ? (
-          <View style={styles.errorCard} testID="edit.error">
-            <Text style={styles.errorTitle}>{error.title}</Text>
-            <Text style={styles.errorMessage}>{error.message}</Text>
-          </View>
+          <ErrorCard title={error.title} message={error.message} testID="edit.error" />
         ) : null}
 
-        <Pressable
+        <Button
+          label={canApprove ? Strings.editApprove : Strings.editApproveDisabled}
           onPress={handleApprove}
           disabled={!canApprove || busy}
-          style={[
-            styles.primary,
-            (!canApprove || busy) && styles.primaryDisabled,
-          ]}
+          loading={busy && canApprove}
+          variant="primary"
+          size="lg"
+          fullWidth
           testID="edit.approve"
-        >
-          {busy ? (
-            <ActivityIndicator color={colors.surface} />
-          ) : (
-            <Text style={styles.primaryText}>
-              {canApprove ? Strings.editApprove : Strings.editApproveDisabled}
-            </Text>
-          )}
-        </Pressable>
-
-        <Pressable
+          style={styles.cta}
+        />
+        <Button
+          label={Strings.editDelete}
           onPress={handleDelete}
           disabled={busy}
-          style={[styles.danger, busy && styles.primaryDisabled]}
+          variant="danger"
+          fullWidth
           testID="edit.delete"
-        >
-          <Text style={styles.dangerText}>{Strings.editDelete}</Text>
-        </Pressable>
+          style={styles.cta}
+        />
       </ScrollView>
     </SafeAreaView>
-  );
-}
-
-type FieldProps = {
-  label: string;
-  value: string;
-  onChangeText: (v: string) => void;
-  onBlur?: () => void;
-  testID?: string;
-  keyboardType?: 'default' | 'number-pad' | 'url' | 'email-address';
-  multiline?: boolean;
-};
-
-function Field({
-  label,
-  value,
-  onChangeText,
-  onBlur,
-  testID,
-  keyboardType = 'default',
-  multiline = false,
-}: FieldProps): React.ReactElement {
-  return (
-    <View style={styles.field}>
-      <Text style={styles.label}>{label}</Text>
-      <TextInput
-        style={[styles.input, multiline && styles.inputMultiline]}
-        value={value}
-        onChangeText={onChangeText}
-        onBlur={onBlur}
-        keyboardType={keyboardType}
-        multiline={multiline}
-        testID={testID}
-      />
-    </View>
   );
 }
 
@@ -431,74 +390,27 @@ export { __resetReviewQueueStoreForTest };
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.bg },
-  scroll: { padding: spacing.lg, paddingBottom: spacing.xxl },
+  scroll: { padding: spacing.lg, paddingBottom: spacing.xxxl },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.lg },
-  title: { fontSize: 26, fontWeight: 'bold', color: colors.text, marginBottom: spacing.lg },
-  field: { marginBottom: spacing.lg },
-  label: { fontSize: 14, color: colors.muted, marginBottom: spacing.xs },
-  input: {
-    backgroundColor: colors.surface,
-    borderColor: colors.line,
-    borderWidth: 1,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    fontSize: 16,
-    color: colors.text,
-  },
-  inputMultiline: { minHeight: 88, textAlignVertical: 'top' },
-  categoryPicker: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.lg },
+  label: { ...typography.captionEmphasis, color: colors.textMuted, marginBottom: spacing.xs, marginTop: spacing.sm },
+  categoryPicker: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.md },
   chip: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderColor: colors.line,
     borderWidth: 1,
-    borderRadius: radius.sm,
+    borderRadius: radius.full,
     backgroundColor: colors.surface,
   },
   chipActive: { backgroundColor: colors.accent, borderColor: colors.accent },
   chipText: { color: colors.text, fontSize: 14 },
-  chipTextActive: { color: colors.surface, fontWeight: 'bold' },
+  chipTextActive: { color: colors.textInverse, fontWeight: '600' },
   publishRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderColor: colors.line,
-    borderWidth: 1,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.lg,
   },
   publishBody: { flex: 1, marginRight: spacing.md },
-  publishTitle: { fontSize: 15, fontWeight: 'bold', color: colors.text },
-  publishHint: { fontSize: 13, color: colors.muted, marginTop: spacing.xs },
-  errorCard: {
-    backgroundColor: colors.surface,
-    borderColor: colors.line,
-    borderWidth: 1,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.lg,
-  },
-  errorTitle: { fontSize: 16, fontWeight: 'bold', color: colors.error, marginBottom: spacing.xs },
-  errorMessage: { fontSize: 14, color: colors.text, lineHeight: 20 },
-  primary: {
-    backgroundColor: colors.accent,
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  primaryDisabled: { opacity: 0.5 },
-  primaryText: { color: colors.surface, fontSize: 16, fontWeight: 'bold' },
-  danger: {
-    backgroundColor: colors.surface,
-    borderColor: colors.error,
-    borderWidth: 1,
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
-    alignItems: 'center',
-  },
-  dangerText: { color: colors.error, fontSize: 15, fontWeight: 'bold' },
+  publishTitle: { ...typography.bodyEmphasis, color: colors.text, marginBottom: spacing.xs },
+  publishHint: { ...typography.caption, color: colors.textMuted, lineHeight: 18 },
+  cta: { marginBottom: spacing.md },
 });
-

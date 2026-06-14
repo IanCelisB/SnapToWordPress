@@ -4,9 +4,18 @@
 // `run`, `transaction`, `close`. Opens the database, enables WAL +
 // foreign keys, and exposes a `withTransaction` helper for multi-statement
 // operations. Pure I/O: no business logic lives here.
+//
+// On web, `expo-sqlite` can't load its `wa-sqlite.wasm` via Metro, so we
+// fork to an in-memory shim that exposes the same async handle shape.
 
-import * as SQLite from 'expo-sqlite';
+import { Platform } from 'react-native';
 import type { MigrationError } from '../error-presentation';
+
+// Native: real expo-sqlite. Web: in-memory shim.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const SQLite = Platform.OS === 'web'
+  ? require('./sqlite-shim') as typeof import('expo-sqlite')
+  : require('expo-sqlite') as typeof import('expo-sqlite');
 
 const DB_NAME = 'etiquetador.db';
 
@@ -27,8 +36,9 @@ export type DB = {
   getUserVersion(): Promise<number>;
   setUserVersion(version: number): Promise<void>;
   close(): Promise<void>;
-  /** Test seam: the underlying expo-sqlite handle. */
-  __raw: SQLite.SQLiteDatabase;
+  /** Test seam: the underlying expo-sqlite (or shim) handle. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  __raw: any;
 };
 
 let cached: DB | null = null;
@@ -51,7 +61,8 @@ export function __resetForTest(): void {
   }
 }
 
-function wrap(raw: SQLite.SQLiteDatabase): DB {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function wrap(raw: any): DB {
   const db: DB = {
     async exec(sql: string): Promise<void> {
       await raw.execAsync(sql);
@@ -60,14 +71,14 @@ function wrap(raw: SQLite.SQLiteDatabase): DB {
       sql: string,
       params?: ReadonlyArray<SqlParam>,
     ): Promise<T[]> {
-      return raw.getAllAsync<T>(sql, ...(params ?? []));
+      return raw.getAllAsync(sql, ...(params ?? [])) as Promise<T[]>;
     },
     async queryOne<T>(
       sql: string,
       params?: ReadonlyArray<SqlParam>,
     ): Promise<T | null> {
-      const row = await raw.getFirstAsync<T>(sql, ...(params ?? []));
-      return row ?? null;
+      const row = await raw.getFirstAsync(sql, ...(params ?? []));
+      return (row ?? null) as T | null;
     },
     async run(
       sql: string,
@@ -94,9 +105,9 @@ function wrap(raw: SQLite.SQLiteDatabase): DB {
       return db.transaction(fn);
     },
     async getUserVersion(): Promise<number> {
-      const result = await raw.getFirstAsync<{ user_version: number }>(
+      const result = await raw.getFirstAsync(
         'PRAGMA user_version',
-      );
+      ) as { user_version: number } | null;
       return result?.user_version ?? 0;
     },
     async setUserVersion(version: number): Promise<void> {

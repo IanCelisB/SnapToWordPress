@@ -8,6 +8,10 @@
 // The wrapper is intentionally NOT a class — it's a module of pure
 // functions. The credentials module composes it.
 //
+// On web, expo-secure-store ships an empty stub for its native bridge.
+// The Metro alias in metro.config.js redirects the internal bridge
+// module to our localStorage-backed implementation (secure-store-web-bridge.ts).
+//
 // Security contract: this module NEVER logs a value. The test
 // `__tests__/secure-store.test.ts` greps the file source for any
 // `console.*` call to catch regressions.
