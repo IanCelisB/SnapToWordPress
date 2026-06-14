@@ -60,10 +60,17 @@ export async function validateAndSave(
     key: candidate.key,
     secret: candidate.secret,
   };
+  // Persist FIRST, validate SECOND. On web, the validation request can
+  // be blocked by CORS and trap the user in a deadlock if we only save
+  // on success. Persist locally and surface the validation result as a
+  // non-blocking notice — the user can still sync / test later. The
+  // proper "test-connection" UX (separate button, accurate feedback)
+  // is part of the `settings-first-config` plan; this change is the
+  // minimum needed to unblock web usage today.
+  await saveCredentials(normalized);
   const client = createWooClient(normalized, createHttpClient());
   const result = await client.validate();
   if (result.ok) {
-    await saveCredentials(normalized);
     return { ok: true, normalizedUrl };
   }
   // Map the underlying reason to a catalog key.

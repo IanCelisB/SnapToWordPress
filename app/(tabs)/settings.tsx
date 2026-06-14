@@ -90,19 +90,23 @@ export default function Settings(): React.ReactElement {
     }
     setMode('replacing');
     try {
+      // `validateAndSave` persists BEFORE validating now (see
+      // src/services/credentials.ts). So regardless of validation
+      // outcome, the credentials are saved and the UI can reflect
+      // that. If validation fails we surface the error as a
+      // non-blocking notice — the user can still sync / test later.
       const result = await validateAndSave({
         baseUrl: replaceUrl,
         key: replaceKey,
         secret: replaceSecret,
       });
-      if (result.ok) {
-        setStoreUrl(result.normalizedUrl);
-        setReplaceUrl(result.normalizedUrl);
-        setHasCreds(true);
-        setReplaceSecret('');
-        return;
+      setStoreUrl(result.normalizedUrl);
+      setReplaceUrl(result.normalizedUrl);
+      setHasCreds(true);
+      setReplaceSecret('');
+      if (!result.ok) {
+        setError(presentError(result.classification));
       }
-      setError(presentError(result.classification));
     } catch (err) {
       setError(presentError(err));
     } finally {
@@ -117,24 +121,10 @@ export default function Settings(): React.ReactElement {
       await clearCredentials();
       setHasCreds(false);
       setStoreUrl(null);
-      router.replace('/onboarding');
     } finally {
       setMode('idle');
     }
-  }, [router]);
-
-  if (!hasCreds) {
-    return (
-      <SafeAreaView style={styles.safe}>
-        <View style={styles.center}>
-          <Text style={typography.h2}>Sin tienda vinculada</Text>
-          <Text style={styles.muted}>
-            Volvé a la pantalla de bienvenida para conectar una tienda.
-          </Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  }, []);
 
   return (
     <SafeAreaView style={styles.safe}>
