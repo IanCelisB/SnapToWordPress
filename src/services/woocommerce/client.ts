@@ -54,7 +54,7 @@ export function createWooClient(
 
     async validate() {
       try {
-        const res = await http.request<unknown>(`${baseUrl}/wc/v3/system_status`, {
+        const res = await http.request<unknown>(`${baseUrl}/wp-json/wc/v3/system_status`, {
           method: 'GET',
           headers: authHeader,
           timeoutMs: DEFAULT_TIMEOUT_MS,
@@ -79,7 +79,7 @@ export function createWooClient(
     },
 
     async getProductByLocalId(localId: string) {
-      const url = `${baseUrl}/wc/v3/products?per_page=1&meta_key=local_id&meta_value=${encodeURIComponent(localId)}`;
+      const url = `${baseUrl}/wp-json/wc/v3/products?per_page=1&meta_key=local_id&meta_value=${encodeURIComponent(localId)}`;
       try {
         const res = await http.request<ReadonlyArray<WCProduct>>(url, {
           method: 'GET',
@@ -178,7 +178,7 @@ export function createWooClient(
         meta_data: body.metaData.map((m) => ({ key: m.key, value: m.value })),
       };
       try {
-        const res = await http.request<WCProduct>(`${baseUrl}/wc/v3/products`, {
+        const res = await http.request<WCProduct>(`${baseUrl}/wp-json/wc/v3/products`, {
           method: 'POST',
           headers: { ...authHeader, 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -188,7 +188,7 @@ export function createWooClient(
           return res.body;
         }
         throw new WooError({
-          message: `POST /wc/v3/products failed: ${res.status}`,
+          message: `POST /wp-json/wc/v3/products failed: ${res.status}`,
           status: res.status,
           body: res.body,
         });
@@ -201,7 +201,7 @@ export function createWooClient(
     async listCategories() {
       try {
         const res = await http.request<ReadonlyArray<WCCategory>>(
-          `${baseUrl}/wc/v3/products/categories?per_page=100`,
+          `${baseUrl}/wp-json/wc/v3/products/categories?per_page=100`,
           {
             method: 'GET',
             headers: authHeader,
@@ -212,7 +212,7 @@ export function createWooClient(
           return res.body;
         }
         throw new WooError({
-          message: `GET /wc/v3/products/categories failed: ${res.status}`,
+          message: `GET /wp-json/wc/v3/products/categories failed: ${res.status}`,
           status: res.status,
           body: res.body,
         });

@@ -2,14 +2,14 @@
 // (WU-4 task 4.5 + Design §5 + woocommerce-sync spec R1, R2).
 //
 // The pipeline:
-//   1. IDEMPOTENCY PRE-CHECK: `GET /wc/v3/products?per_page=1&meta_key=local_id&meta_value=<uuid>`.
+//   1. IDEMPOTENCY PRE-CHECK: `GET /wp-json/wc/v3/products?per_page=1&meta_key=local_id&meta_value=<uuid>`.
 //      If a match comes back, store the `wc_product_id` and short-circuit to
 //      `synced` (the server already has this product — we are recovering from
 //      a network blip or a previous run that lost its response).
-//   2. MEDIA × N: `POST /wp/v2/media` for each image in the product. Each
+//   2. MEDIA × N: `POST /wp-json/wp/v2/media` for each image in the product. Each
 //      successful upload is recorded in `media_ledger` (WU-4.6) AND
 //      `media_uploads` so the orphan sweeper (WU-4.7) can find it later.
-//   3. PRODUCT CREATE: `POST /wc/v3/products` with `images: [{id, ...}]`
+//   3. PRODUCT CREATE: `POST /wp-json/wc/v3/products` with `images: [{id, ...}]`
 //      and `meta_data: [{key: "local_id", value: <uuid>}]`. On 2xx, the
 //      media items are marked `attached`; on 5xx, they are marked `orphan`
 //      so the sweeper deletes them later.
@@ -139,7 +139,7 @@ export async function uploadProductForWorker(
 }
 
 /**
- * Build the POST /wc/v3/products body. Returns the typed
+ * Build the POST /wp-json/wc/v3/products body. Returns the typed
  * `NewWCProductBody` (camelCase) — the client's `createProduct`
  * converts it to the wire format (`regular_price`, `meta_data`).
  */
