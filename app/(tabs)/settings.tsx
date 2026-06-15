@@ -4,8 +4,10 @@
 //   - the current store URL (read-only),
 //   - "Reconectar tienda" (re-runs `validateAndSave` with the current
 //     creds),
-//   - "Reemplazar credenciales" (re-opens the onboarding form pre-filled
-//     with the current values),
+//   - "Reemplazar credenciales" (inline form pre-filled with the
+//     current values — this is also the only path to configure
+//     credentials for a first-time user, since there is no separate
+//     onboarding/login screen),
 //   - a calm storage usage line read from `file-system.getDirSize()`.
 //
 // "Sign out" clears the secure store but INTENTIONALLY keeps the local

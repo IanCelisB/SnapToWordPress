@@ -24,7 +24,7 @@ import type { NetworkObserver } from './network-observer';
 import { createWooClient } from '../services/woocommerce/client';
 import type { WooClient } from '../services/woocommerce/client';
 import { createHttpClient } from '../infra/http-client';
-import { loadCredentials } from '../services/credentials';
+import { hasCredentials, loadCredentials } from '../services/credentials';
 import type { WCCredentials } from '../domain/types';
 
 const AUTO_SYNC_ON_WIFI_KEY = 'auto_sync_on_wifi';
@@ -101,7 +101,11 @@ export function createSyncTrigger(deps: SyncTriggerDeps): SyncTrigger {
 
       // Subscribe to network events. The trigger reacts to
       // `wifi-connected` and `connected` by auto-starting the
-      // worker (subject to the pause toggle + auto-sync pref).
+      // worker (subject to the pause toggle + auto-sync pref +
+      // credentials being configured). The credentials check is
+      // defense-in-depth — the sync screen also guards its primary
+      // action, but background auto-sync must not crash on a missing
+      // secure store.
       const sub = deps.observer.subscribe(async (event) => {
         if (
           event.kind === 'wifi-connected' ||
@@ -109,6 +113,7 @@ export function createSyncTrigger(deps: SyncTriggerDeps): SyncTrigger {
         ) {
           if (await isPaused()) return;
           if (!(await isAutoSyncOnWifi())) return;
+          if (!(await hasCredentials())) return;
           await w.start();
         }
       });
@@ -119,6 +124,13 @@ export function createSyncTrigger(deps: SyncTriggerDeps): SyncTrigger {
       if (!worker) {
         // Trigger wasn't initialized yet; the layout's effect
         // should have called `init()` first.
+        return { succeeded: 0, failed: 0, paused: false };
+      }
+      // Defensive credentials check. The sync screen also guards
+      // this (and shows the "configure in Settings" notice), but
+      // future callers (e.g. background tasks) must not start the
+      // worker without a configured store.
+      if (!(await hasCredentials())) {
         return { succeeded: 0, failed: 0, paused: false };
       }
       return worker.start();

@@ -30,7 +30,6 @@ import type {
 import {
   SECURE_STORE_KEYS,
   clearAll as clearSecureStore,
-  deleteItem,
   getItem,
   setItem,
 } from '../infra/secure-store';
@@ -110,6 +109,17 @@ export async function loadCredentials(): Promise<WCCredentials | null> {
   return { baseUrl, key, secret };
 }
 
+/**
+ * Cheap boolean check for "are credentials configured?". Used by the
+ * activities that need WC connectivity (the sync screen) to decide
+ * whether to render the calm notice + CTA to Settings, instead of
+ * surfacing a raw sync error.
+ */
+export async function hasCredentials(): Promise<boolean> {
+  const creds = await loadCredentials();
+  return creds !== null;
+}
+
 export async function clearCredentials(): Promise<void> {
   await clearSecureStore();
 }
@@ -149,13 +159,3 @@ export function describeResult(
   }
   return presentError(result.classification);
 }
-
-// Internal: re-exported for tests so the unit test can assert the
-// `Authorization` header shape without re-deriving the base64.
-export const __internal = {
-  buildAuthHeader,
-  canonicalizeBaseUrl,
-  // `deleteItem` is exposed for the no-credentials-reuse unit test
-  // (it sets a single key in isolation).
-  deleteItem,
-};

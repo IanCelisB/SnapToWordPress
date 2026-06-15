@@ -1,23 +1,20 @@
 // app/(tabs)/_layout.tsx — bottom-tab navigator with a custom tab
-// bar (4 items: Capturar / Cola / Home / Ajustes).
+// bar (3 items: Capturar / Cola / Ajustes).
 //
 // We pass a custom `tabBar` to <Tabs> instead of using the default
 // chrome — the default is too rigid to support the rounded-top
 // shape with real Ionicons.
 //
-// The Home item is a CUSTOM ACTION (not a registered tab) — it
-// uses `useRouter().push('/')` to navigate to the home menu at
-// the root, since the home menu lives at `app/index.tsx` and
-// can't be a Tabs.Screen (Tabs can only contain files inside the
-// (tabs) group).
+// The user lands on the main menu as soon as the app boots; the
+// activities themselves show a calm notice when they need WC
+// credentials configured in Settings (see the sync screen).
 
 import { Tabs } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
-import { AppTabBar, useHomeTabBarItem } from '@/ui/components/AppTabBar';
+import { AppTabBar } from '@/ui/components/AppTabBar';
 
 export default function TabsLayout(): React.ReactElement {
-  const homeItem = useHomeTabBarItem();
   return (
     <>
       <StatusBar style="dark" />
@@ -31,7 +28,6 @@ export default function TabsLayout(): React.ReactElement {
             items={[
               { name: 'capturar', label: 'Capturar', icon: '📷' },
               { name: 'lista', label: 'Cola', icon: '📋' },
-              homeItem,
               { name: 'settings', label: 'Ajustes', icon: '⚙️' },
             ]}
           />

@@ -5,9 +5,9 @@
 // navigator has a real screen to show — without it, expo-router
 // throws on the `/blocked` route and the page stays blank.
 //
-// The full polished error UI is in `app/onboarding.tsx`-style
-// (catalog-driven, localized). For now this is just enough to
-// unblock the layout's `router.replace('/blocked')` call.
+// The error detail is rendered on the boot-error overlay in the
+// root layout (see `app/_layout.tsx`). This screen exists only so
+// expo-router has somewhere to land.
 
 import { Text, View, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';

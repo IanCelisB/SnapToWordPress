@@ -1,16 +1,18 @@
-// app/_layout.tsx — root layout, first-launch routing, and DB lifecycle.
+// app/_layout.tsx — root layout and DB lifecycle.
 //
 // Per Design §11 the mount sequence is:
 //   1. `openDB()` + `runMigrations()` — on failure, route to `/blocked`
 //      and present the `almacenamiento-error` catalog entry.
-//   2. `loadCredentials()` — if null, route to `/onboarding`.
-//   3. If present, route to `/(tabs)/capturar`.
+//   2. Wire the sync trigger (the user lands on the main menu
+//      regardless of credential state — the activities themselves
+//      block actions that need credentials, see the sync screen).
+//   3. Route to `/(tabs)/capturar`.
 //
-// We use a `Stack` with all four screens registered up-front, and
+// We use a `Stack` with both screens registered up-front, and
 // `router.replace()` to switch between them. The first registered
 // screen is shown synchronously while the DB init runs in the
-// background — so the user sees the home menu (or the splash) within
-// a frame, not a blank page.
+// background — so the user sees the tabs within a frame, not a
+// blank page.
 //
 // The `bootStage` string is rendered to the page at all times so we
 // can see exactly where the mount sequence is stuck (it lives in a
@@ -23,7 +25,6 @@ import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
 import { openDB, runMigrations } from '@/db';
-import { loadCredentials } from '@/services/credentials';
 import { presentError } from '@/error-presentation';
 import { colors } from '@/ui/theme';
 import { createSyncTrigger } from '@/sync/sync-trigger';
@@ -31,7 +32,7 @@ import { createDefaultNetworkObserver } from '@/sync/network-observer';
 import { useSyncStore } from '@/stores/syncStore';
 import { useErrorStore } from '@/stores/error-store';
 
-type Route = 'loading' | 'blocked' | 'onboarding' | 'tabs';
+type Route = 'loading' | 'blocked' | 'tabs';
 
 export default function RootLayout(): React.ReactElement {
   const [route, setRoute] = useState<Route>('loading');
@@ -53,35 +54,34 @@ export default function RootLayout(): React.ReactElement {
         await runMigrations(db);
         if (cancelled) return;
 
-        setBootStage('loadCredentials');
-        const creds = await loadCredentials();
+        // Wire the sync trigger unconditionally. The trigger itself
+        // is defensive — if no credentials are saved it will refuse
+        // to start the worker (see `sync-trigger.ts`). The activities
+        // that need credentials (the sync screen) show a calm notice
+        // with a CTA to Settings; the user is never blocked from
+        // reaching the main menu.
+        setBootStage('syncTrigger.init');
+        const observer = createDefaultNetworkObserver();
+        const syncStore = useSyncStore();
+        const errorStore = useErrorStore();
+
+        trigger = createSyncTrigger({
+          db,
+          observer,
+          onEvent: (event) => {
+            syncStore.getState().applyEvent(event);
+            errorStore.getState().addEvent(event);
+          },
+        });
+
+        globalThis.__etiquetadorSyncTrigger = {
+          startManual: trigger.startManual,
+          isPaused: trigger.isPaused,
+          setPaused: trigger.setPaused,
+        };
+
+        await trigger.init();
         if (cancelled) return;
-
-        // Wire the sync trigger once credentials are available.
-        if (creds) {
-          setBootStage('syncTrigger.init');
-          const observer = createDefaultNetworkObserver();
-          const syncStore = useSyncStore();
-          const errorStore = useErrorStore();
-
-          trigger = createSyncTrigger({
-            db,
-            observer,
-            onEvent: (event) => {
-              syncStore.getState().applyEvent(event);
-              errorStore.getState().addEvent(event);
-            },
-          });
-
-          globalThis.__etiquetadorSyncTrigger = {
-            startManual: trigger.startManual,
-            isPaused: trigger.isPaused,
-            setPaused: trigger.setPaused,
-          };
-
-          await trigger.init();
-          if (cancelled) return;
-        }
 
         setBootStage('route:tabs');
         setRoute('tabs');
@@ -142,9 +142,7 @@ export default function RootLayout(): React.ReactElement {
     <SafeAreaProvider>
       <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="index" />
         <Stack.Screen name="blocked" />
-        <Stack.Screen name="onboarding" />
         <Stack.Screen name="(tabs)" />
       </Stack>
       {route === 'loading' ? (

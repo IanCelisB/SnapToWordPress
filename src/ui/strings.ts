@@ -144,17 +144,13 @@ export const Strings = {
   // Pause toggle
   pauseToggleLabel: 'Sincronización pausada',
 
-  // Onboarding
-  onboardingTitle: 'Vincular tienda',
-  onboardingHint: 'Ingresá los datos de tu tienda para vincularla.',
-  onboardingUrlLabel: 'URL de la tienda',
-  onboardingUrlPlaceholder: 'mitienda.com',
-  onboardingKeyLabel: 'Consumer Key',
-  onboardingKeyPlaceholder: 'ck_…',
-  onboardingSecretLabel: 'Consumer Secret',
-  onboardingSecretPlaceholder: 'cs_…',
-  onboardingSave: 'Vincular',
-  onboardingSaving: 'Vinculando…',
+  // Sync screen — needs-credentials notice (shown when no WC creds
+  // are configured in Settings; the user can still navigate the app,
+  // but cannot sync / upload images until they link a store).
+  syncNeedsCredentialsTitle: 'Falta vincular tu tienda',
+  syncNeedsCredentialsHint:
+    'Tocá Ajustes para configurar tu tienda y poder sincronizar.',
+  syncNeedsCredentialsAction: 'Ir a Ajustes',
 
   // Settings
   settingsTitle: 'Ajustes',

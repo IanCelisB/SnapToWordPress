@@ -9,6 +9,11 @@
 //   - Calm hint area: "No hay productos pendientes" /
 //     "La sincronización está pausada" / "Esperando Wi-Fi".
 //
+// If no WC credentials are configured in Settings, the screen shows
+// a calm notice with a CTA to the settings tab and disables the
+// primary action. The user can still navigate the rest of the app
+// (capture, queue, settings) — only the sync action is blocked.
+//
 // All strings come from `src/ui/strings.ts` — no inline Spanish
 // literals, ever. The progress line uses a templated string with
 // `{current}` / `{total}` placeholders.
@@ -24,9 +29,11 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useSyncStore } from '../../stores/syncStore';
+import { hasCredentials } from '../../services/credentials';
 import { Strings } from '../strings';
 import { Button, Card, Header } from '../primitives';
 import { colors, radius, spacing, typography } from '../theme';
@@ -46,6 +53,7 @@ declare global {
 }
 
 export default function SyncScreen(): React.ReactElement {
+  const router = useRouter();
   const store = useSyncStore();
   const status = store((s) => s.status);
   const progress = store((s) => s.progress);
@@ -54,6 +62,9 @@ export default function SyncScreen(): React.ReactElement {
   const lastSyncAt = store((s) => s.lastSyncAt);
 
   const [busy, setBusy] = useState(false);
+  // `null` while we're still checking the secure store on mount;
+  // `true` / `false` after the first read.
+  const [credentialsOk, setCredentialsOk] = useState<boolean | null>(null);
 
   useEffect(() => {
     // On mount, sync the local `paused` flag from the trigger.
@@ -67,9 +78,30 @@ export default function SyncScreen(): React.ReactElement {
     });
   }, [store]);
 
+  useEffect(() => {
+    // Cheap pre-check on mount. The trigger itself is defensive
+    // (refuses to start without credentials), but reading the
+    // secure store here lets us render the calm notice + CTA to
+    // Settings instead of a raw sync error.
+    let cancelled = false;
+    void hasCredentials().then((ok) => {
+      if (!cancelled) setCredentialsOk(ok);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const handleSyncNow = useCallback(async () => {
     const trigger = globalThis.__etiquetadorSyncTrigger;
     if (!trigger || busy) return;
+    // Defensive re-check at tap time (the user could have cleared
+    // credentials in Settings between the mount-time read and now).
+    const ok = await hasCredentials();
+    if (!ok) {
+      setCredentialsOk(false);
+      return;
+    }
     setBusy(true);
     try {
       await trigger.startManual();
@@ -77,6 +109,10 @@ export default function SyncScreen(): React.ReactElement {
       setBusy(false);
     }
   }, [busy]);
+
+  const handleGoToSettings = useCallback(() => {
+    router.push('/(tabs)/settings');
+  }, [router]);
 
   const handleTogglePause = useCallback(async () => {
     const trigger = globalThis.__etiquetadorSyncTrigger;
@@ -108,6 +144,12 @@ export default function SyncScreen(): React.ReactElement {
     return null;
   })();
 
+  // Block the sync action when no credentials are configured. The
+  // user keeps access to the screen (so they can see WHY the
+  // action is blocked) but the primary button is replaced by the
+  // "configure in settings" CTA.
+  const showNeedsCredentials = credentialsOk === false;
+
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll}>
@@ -123,7 +165,30 @@ export default function SyncScreen(): React.ReactElement {
           </Card>
         ) : null}
 
-        {hint !== null ? (
+        {showNeedsCredentials ? (
+          <Card
+            padding="md"
+            testID="sync.needsCredentials"
+            style={styles.needsCredsCard}
+          >
+            <Text style={styles.needsCredsTitle}>
+              {Strings.syncNeedsCredentialsTitle}
+            </Text>
+            <Text style={styles.needsCredsHint}>
+              {Strings.syncNeedsCredentialsHint}
+            </Text>
+            <Button
+              label={Strings.syncNeedsCredentialsAction}
+              onPress={handleGoToSettings}
+              variant="primary"
+              fullWidth
+              testID="sync.needsCredentials.action"
+              style={styles.needsCredsButton}
+            />
+          </Card>
+        ) : null}
+
+        {hint !== null && !showNeedsCredentials ? (
           <Text style={styles.hint} testID="sync.hint">
             {hint}
           </Text>
@@ -151,7 +216,7 @@ export default function SyncScreen(): React.ReactElement {
         <Button
           label={isRunning ? Strings.syncSyncingShort : Strings.syncSyncNow}
           onPress={handleSyncNow}
-          disabled={isRunning || paused}
+          disabled={isRunning || paused || showNeedsCredentials}
           loading={isRunning}
           variant="primary"
           size="lg"
@@ -192,6 +257,22 @@ const styles = StyleSheet.create({
     ...typography.bodyEmphasis,
     color: colors.text,
     flex: 1,
+  },
+  needsCredsCard: {
+    marginBottom: spacing.lg,
+    gap: spacing.sm,
+  },
+  needsCredsTitle: {
+    ...typography.bodyEmphasis,
+    color: colors.text,
+  },
+  needsCredsHint: {
+    ...typography.caption,
+    color: colors.textMuted,
+    lineHeight: 20,
+  },
+  needsCredsButton: {
+    marginTop: spacing.sm,
   },
   hint: {
     ...typography.caption,
