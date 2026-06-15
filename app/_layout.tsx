@@ -3,15 +3,15 @@
 // Per Design §11 the mount sequence is:
 //   1. `openDB()` + `runMigrations()` — on failure, route to `/blocked`
 //      and present the `almacenamiento-error` catalog entry.
-//   2. Wire the sync trigger (the user lands on the main menu
+//   2. Wire the sync trigger (the user lands on the home menu
 //      regardless of credential state — the activities themselves
 //      block actions that need credentials, see the sync screen).
-//   3. Route to `/(tabs)/capturar`.
+//   3. Route to `/` (the home menu).
 //
-// We use a `Stack` with both screens registered up-front, and
+// We use a `Stack` with all screens registered up-front, and
 // `router.replace()` to switch between them. The first registered
 // screen is shown synchronously while the DB init runs in the
-// background — so the user sees the tabs within a frame, not a
+// background — so the user sees the home within a frame, not a
 // blank page.
 //
 // The `bootStage` string is rendered to the page at all times so we
@@ -32,7 +32,7 @@ import { createDefaultNetworkObserver } from '@/sync/network-observer';
 import { useSyncStore } from '@/stores/syncStore';
 import { useErrorStore } from '@/stores/error-store';
 
-type Route = 'loading' | 'blocked' | 'tabs';
+type Route = 'loading' | 'blocked' | 'home';
 
 export default function RootLayout(): React.ReactElement {
   const [route, setRoute] = useState<Route>('loading');
@@ -83,8 +83,9 @@ export default function RootLayout(): React.ReactElement {
         await trigger.init();
         if (cancelled) return;
 
-        setBootStage('route:tabs');
-        setRoute('tabs');
+        setBootStage('route:home');
+        setRoute('home');
+
       } catch (err) {
         if (cancelled) return;
         const msg = err instanceof Error
@@ -108,9 +109,10 @@ export default function RootLayout(): React.ReactElement {
   // components stay registered (see file header).
   useEffect(() => {
     if (route === 'loading') return;
-    // `(tabs)` is a route group, not a screen — expo-router will show
-    // "Unmatched Route" if we target it. Land on the default tab instead.
-    const target = route === 'tabs' ? '/(tabs)/capturar' : `/${route}`;
+    // After the boot sequence finishes the user lands on the home
+    // menu (`/`). The activities (Capturar, Cola, Sincronización,
+    // Ajustes) are reached from the home cards.
+    const target = route === 'home' ? '/' : `/${route}`;
     try {
       setBootStage(`navigate:${target}`);
       router.replace(target as never);
@@ -142,6 +144,7 @@ export default function RootLayout(): React.ReactElement {
     <SafeAreaProvider>
       <StatusBar style="dark" />
       <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
         <Stack.Screen name="blocked" />
         <Stack.Screen name="(tabs)" />
       </Stack>

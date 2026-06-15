@@ -45,8 +45,8 @@ export const ERROR_CATALOG: Record<ErrorKey, CatalogEntry> = {
     severity: 'warning',
   },
   'camara-permiso-denegado': {
-    title: 'Necesitamos la cámara',
-    message: 'Activala desde Ajustes para sacar fotos.',
+    title: 'Sin acceso a la cámara',
+    message: 'Habilitá el permiso desde tu navegador o sistema para sacar fotos.',
     severity: 'blocking',
     action: { kind: 'open-settings' },
   },

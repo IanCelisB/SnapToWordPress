@@ -152,9 +152,44 @@ export const Strings = {
     'Tocá Ajustes para configurar tu tienda y poder sincronizar.',
   syncNeedsCredentialsAction: 'Ir a Ajustes',
 
+  // Home screen — 4 entry-point cards (Capturar / Cola /
+  // Sincronización / Ajustes). The card labels reuse the tab
+  // labels (`tabCapture`, `tabQueue`, `tabSync`, `tabSettings`).
+  homeTitle: 'Etiquetador de Productos',
+  homeSubtitle: 'Elegí una opción para empezar.',
+  homeMenuCaptureSubtitle: 'Sacá una foto y completá los datos del producto.',
+  homeMenuQueueSubtitle: 'Revisá los productos pendientes y listos para subir.',
+  homeMenuSyncSubtitle: 'Subí los productos a tu tienda.',
+  homeMenuSettingsSubtitle: 'Configurá la tienda, las credenciales y el almacenamiento.',
+
   // Settings
   settingsTitle: 'Ajustes',
-  settingsStore: 'Tienda vinculada',
+  settingsStore: 'Tienda actual',
+  settingsConnected: 'Conectado',
+  settingsNotConnectedHint: 'Configurá la tienda para poder sincronizar.',
+  settingsConfigure: 'Configurar tienda',
+  settingsReconnect: 'Reconectar tienda',
+  settingsReconnectedTitle: 'Tienda reconectada',
+  settingsReconnectedHint: 'La conexión con la tienda funciona correctamente.',
+  settingsSavedTitle: 'Credenciales guardadas',
+  settingsSavedHintLinked: 'La tienda quedó vinculada. Ya podés sincronizar.',
+  settingsUrlLabel: 'URL',
+  settingsUrlPlaceholder: 'mitienda.com',
+  settingsKeyLabel: 'Consumer Key',
+  settingsKeyPlaceholder: 'ck_xxxxx',
+  settingsSecretLabel: 'Consumer Secret',
+  settingsSecretPlaceholder: 'cs_xxxxx',
+  settingsSave: 'Guardar',
+  settingsFieldRequired: 'Completá todos los campos',
+  settingsStorage: 'Almacenamiento',
+  settingsStorageUsedTpl: '~{mb} MB usados para fotos',
+  settingsStorageCalculating: 'Calculando…',
+  settingsStorageHint: 'Los productos pendientes quedan guardados aunque cierres la app.',
+  settingsSignOut: 'Cerrar sesión',
+  settingsSignOutHint: 'Al cerrar sesión borramos las credenciales. Tus productos no se pierden.',
+  // Legacy keys kept for catalog continuity (the corresponding UI
+  // was removed when the inline form was replaced by the
+  // conditional "Configurar tienda" section).
   settingsRevalidate: 'Re-validar',
   settingsUnlink: 'Desvincular tienda',
   settingsUnlinkConfirm: '¿Seguro? Perderás la vinculación pero los productos se conservan.',
