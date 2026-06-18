@@ -26,6 +26,7 @@
     "android": {
       "package": "cl.optifull.etiquetador",
       "versionCode": 1,
+      "jsEngine": "hermes",
       "newArchEnabled": false,
       "permissions": [
         "android.permission.CAMERA",
@@ -50,11 +51,13 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Necesitamos acceso a tus fotos para elegir imágenes de productos ya guardados."
+          "photosPermission": "Necesitamos acceso a tus fotos para elegir imágenes de productos ya guardados.",
+          "cameraPermission": "Necesitamos la cámara para tomar fotos de los productos que querés etiquetar."
         }
       ],
       "expo-sqlite",
-      "expo-build-properties"
+      "expo-build-properties",
+      "expo-dev-client"
     ],
     "experiments": {
       "typedRoutes": true
