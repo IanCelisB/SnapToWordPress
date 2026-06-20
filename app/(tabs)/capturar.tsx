@@ -103,26 +103,37 @@ export default function Capture(): React.ReactElement {
 
   const handleAddFromCamera = useCallback(async () => {
     setError(null);
-    if (!permission.status || permission.status === 'denied') {
+    // First, ensure we have camera permission. expo-image-picker will
+    // trigger the native permission prompt automatically when the
+    // permission is undetermined, but if it was previously denied we
+    // surface a clear error so the user knows to enable it in Settings.
+    if (permission.status !== 'granted') {
       const result = await request();
       if (!result.granted) {
         setError(presentError(result.classification));
         return;
       }
     }
-    const picker = await launchCameraAsync({
-      mediaTypes: MediaTypeOptions.Images,
-      quality: 0.8,
-    });
-    if (picker.canceled || !picker.assets?.[0]) {
-      return;
+    try {
+      const picker = await launchCameraAsync({
+        mediaTypes: MediaTypeOptions.Images,
+        quality: 0.8,
+      });
+      if (picker.canceled || !picker.assets?.[0]) {
+        return;
+      }
+      const asset = picker.assets[0];
+      if (!asset || !asset.uri) {
+        return;
+      }
+      const persisted = await persistCapturedImage(asset.uri);
+      form.addImage(persisted.filePath, persisted.filePath);
+    } catch (err) {
+      // launchCameraAsync throws on iOS simulator (no camera) and on
+      // Android when the permission was revoked between request and
+      // launch. Classify so the UI shows a useful message.
+      setError(presentError(err));
     }
-    const asset = picker.assets[0];
-    if (!asset || !asset.uri) {
-      return;
-    }
-    const persisted = await persistCapturedImage(asset.uri);
-    form.addImage(persisted.filePath, persisted.filePath);
   }, [permission, request, form]);
 
   const handleAddFromLibrary = useCallback(async () => {
@@ -220,14 +231,14 @@ export default function Capture(): React.ReactElement {
                 label={Strings.captureTakePhoto}
                 onPress={handleAddFromCamera}
                 variant="primary"
-                fullWidth
+                style={styles.actionButton}
                 testID="capture.add.camera"
               />
               <Button
                 label={Strings.captureFromLibrary}
                 onPress={handleAddFromLibrary}
                 variant="secondary"
-                fullWidth
+                style={styles.actionButton}
                 testID="capture.add.library"
               />
             </View>
@@ -382,6 +393,7 @@ const styles = StyleSheet.create({
   },
   placeholderText: { color: colors.textMuted, textAlign: 'center', ...typography.caption },
   row: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
+  actionButton: { flex: 1, minHeight: 48 },
   limitHint: { color: colors.warning, ...typography.caption, marginTop: spacing.xs },
   inputLabel: {
     ...typography.captionEmphasis,

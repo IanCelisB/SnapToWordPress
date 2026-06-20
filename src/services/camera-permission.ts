@@ -1,24 +1,25 @@
 // src/services/camera-permission.ts — thin wrapper around the
-// `expo-camera` permission flow (WU-3, product-capture spec R1
-// scenario "Camera permission denied").
+// `expo-image-picker` permission flow.
 //
-// This module is the ONLY place that knows about `expo-camera`. The
-// capture screen consumes `useCameraPermissionState()` (a hook that
-// mirrors `useCameraPermissions`) and `requestCameraPermission` (an
-// imperative helper for the "Pedir permiso" button). The hook is
-// designed to be safe to import from React components; the
-// imperative helper delegates to the hook's request function via
-// a global handoff so pure tests can also exercise the deny-path.
-//
-// All Spanish strings live in `src/ui/strings.ts`. The catalog key
-// returned by `requestCameraPermission` is one of:
-//   - `camara-permiso-denegado` (the only path the test asserts).
-//
-// Under bare Node / Jest, `expo-camera` is mocked in `jest.setup.ts`
-// to return `{granted: false, canAskAgain: true}` for `useCameraPermissions`.
+// Why image-picker and not expo-camera:
+//   - The capture screen uses `expo-image-picker`'s `launchCameraAsync`
+//     to open the native camera, NOT `expo-camera`'s `CameraView`.
+//   - `launchCameraAsync` triggers the system permission prompt
+//     automatically when needed.
+//   - Using image-picker's permission API keeps the runtime surface
+//     to ONE native module (image-picker) instead of two, which is
+//     what was causing the silent no-op on Android before.
+//   - The capture screen consumes `useCameraPermissionState()` (a
+//     hook that mirrors `getCameraPermissionsAsync` /
+//     `requestCameraPermissionsAsync`) and `requestCameraPermission`.
+//   - All Spanish strings live in `src/ui/strings.ts`. The catalog key
+//     returned is `camara-permiso-denegado`.
 
 import { useCallback, useState } from 'react';
-import { useCameraPermissions as useExpoCameraPermissions } from 'expo-camera';
+import {
+  getCameraPermissionsAsync,
+  requestCameraPermissionsAsync,
+} from 'expo-image-picker';
 import type { ErrorKey } from '../error-presentation';
 
 export type CameraPermissionState = {
@@ -37,37 +38,55 @@ export type CameraPermissionOutcome =
   | { granted: false; classification: ErrorKey };
 
 function toState(p: {
-  granted: boolean;
-  canAskAgain: boolean;
+  status?: 'granted' | 'denied' | 'undetermined' | 'never_ask_again';
+  granted?: boolean;
+  canAskAgain?: boolean;
 } | null): CameraPermissionState {
   if (!p) {
     return { status: 'undetermined', canAskAgain: true };
   }
-  if (p.granted) {
-    return { status: 'granted', canAskAgain: p.canAskAgain };
+  // image-picker returns `granted` boolean; older versions return
+  // `status` string. Normalize both.
+  const isGranted = p.granted === true || p.status === 'granted';
+  const isDenied = p.status === 'denied' || p.status === 'never_ask_again';
+  if (isGranted) {
+    return { status: 'granted', canAskAgain: p.canAskAgain ?? true };
   }
-  return { status: 'denied', canAskAgain: p.canAskAgain };
+  if (isDenied) {
+    return { status: 'denied', canAskAgain: p.canAskAgain ?? false };
+  }
+  return { status: 'undetermined', canAskAgain: p.canAskAgain ?? true };
 }
 
 export function useCameraPermissionState(): CameraPermissionHook {
-  const [perm, requestExpo] = useExpoCameraPermissions();
-  const [state, setState] = useState<CameraPermissionState>(() =>
-    toState(perm),
-  );
+  const [state, setState] = useState<CameraPermissionState>({
+    status: 'undetermined',
+    canAskAgain: true,
+  });
 
-  // Keep state in sync with the hook (handles initial mount + changes).
-  if (perm && state.status === 'undetermined') {
-    setState(toState(perm));
-  }
+  const refresh = useCallback(async () => {
+    try {
+      const current = await getCameraPermissionsAsync();
+      setState(toState(current));
+    } catch {
+      // Silent — keep undetermined; UI will request on first tap.
+    }
+  }, []);
 
   const request = useCallback(async (): Promise<CameraPermissionOutcome> => {
-    const result = await requestExpo();
-    setState(toState(result));
-    if (result.granted) {
-      return { granted: true };
+    try {
+      const result = await requestCameraPermissionsAsync();
+      setState(toState(result));
+      if (result.granted) {
+        return { granted: true };
+      }
+      return { granted: false, classification: 'camara-permiso-denegado' };
+    } catch {
+      return { granted: false, classification: 'camara-permiso-denegado' };
     }
-    return { granted: false, classification: 'camara-permiso-denegado' };
-  }, [requestExpo]);
+  }, []);
 
-  return { permission: state, request };
+  return { permission: state, request, refresh } as CameraPermissionHook & {
+    refresh: () => Promise<void>;
+  };
 }
