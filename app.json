@@ -27,7 +27,7 @@
       "package": "cl.optifull.etiquetador",
       "versionCode": 1,
       "jsEngine": "hermes",
-      "newArchEnabled": false,
+      "newArchEnabled": true,
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.READ_MEDIA_IMAGES",

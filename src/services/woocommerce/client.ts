@@ -252,11 +252,6 @@ export function canonicalizeBaseUrl(input: string): string {
   return out;
 }
 
-function isDevBuild(): boolean {
-  const g = globalThis as { __DEV__?: boolean };
-  return g.__DEV__ === true;
-}
-
 /**
  * Build the `Authorization: Basic <base64(key:secret)>` header. Uses
  * btoa (available in RN's Hermes runtime + Node 18+).

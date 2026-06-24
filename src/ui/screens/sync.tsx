@@ -36,7 +36,7 @@ import { useSyncStore } from '../../stores/syncStore';
 import { hasCredentials } from '../../services/credentials';
 import { Strings } from '../strings';
 import { Button, Card, Header } from '../primitives';
-import { colors, radius, spacing, typography } from '../theme';
+import { colors, spacing, typography } from '../theme';
 
 // The trigger instance is wired in `app/_layout.tsx`. The screen
 // reads it via a global accessor that the layout sets at boot

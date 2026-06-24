@@ -39,6 +39,8 @@ export default function RootLayout(): React.ReactElement {
   const [bootStage, setBootStage] = useState<string>('mount');
   const [bootError, setBootError] = useState<string | null>(null);
   const router = useRouter();
+  const syncStore = useSyncStore();
+  const errorStore = useErrorStore();
 
   useEffect(() => {
     let cancelled = false;
@@ -62,8 +64,6 @@ export default function RootLayout(): React.ReactElement {
         // reaching the main menu.
         setBootStage('syncTrigger.init');
         const observer = createDefaultNetworkObserver();
-        const syncStore = useSyncStore();
-        const errorStore = useErrorStore();
 
         trigger = createSyncTrigger({
           db,
@@ -109,17 +109,22 @@ export default function RootLayout(): React.ReactElement {
   // components stay registered (see file header).
   useEffect(() => {
     if (route === 'loading') return;
-    // After the boot sequence finishes the user lands on the home
-    // menu (`/`). The activities (Capturar, Cola, Sincronización,
-    // Ajustes) are reached from the home cards.
     const target = route === 'home' ? '/' : `/${route}`;
     try {
-      setBootStage(`navigate:${target}`);
       router.replace(target as never);
     } catch (err) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setBootError(err instanceof Error ? `${err.name}: ${err.message}` : String(err));
     }
   }, [route, router]);
+
+  // Dev-only stage pill: updates the indicator in response to route
+  // changes, separate from the navigation effect.
+  useEffect(() => {
+    if (route === 'loading') return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setBootStage(`navigate:${route === 'home' ? '/' : `/${route}`}`);
+  }, [route]);
 
   // Visible boot-error overlay. If anything in the mount sequence
   // throws, we surface it on the page instead of leaving it blank.

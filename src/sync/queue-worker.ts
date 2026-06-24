@@ -35,7 +35,7 @@ import { classifyError, presentError } from '../error-presentation';
 import type { CatalogEntry, ErrorKey } from '../error-presentation';
 import type { DB } from '../db';
 import { queueRepo, productsRepo } from '../db/repos';
-import { getConfig, setConfig } from '../db/app-config';
+import { getConfig } from '../db/app-config';
 import { now as defaultNow } from '../infra/clock';
 import { nextBackoffMsWithRetryAfter, parseRetryAfter } from './backoff';
 import { uploadProductForWorker } from './upload-product';
@@ -228,10 +228,6 @@ export function createSyncWorker(deps: SyncDeps): Worker {
   async function isPaused(): Promise<boolean> {
     const raw = await getConfig(deps.db, SYNC_PAUSED_KEY);
     return raw === '1';
-  }
-
-  async function setPausedFlag(value: boolean): Promise<void> {
-    await setConfig(deps.db, SYNC_PAUSED_KEY, value ? '1' : '0');
   }
 
   return {

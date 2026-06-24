@@ -20,7 +20,6 @@
 // `console.*` call passes `creds.key` or `creds.secret`.
 
 import {
-  buildAuthHeader,
   canonicalizeBaseUrl,
   createWooClient,
 } from './woocommerce/client';

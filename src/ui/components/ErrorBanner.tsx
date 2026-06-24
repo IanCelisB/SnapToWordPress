@@ -16,15 +16,15 @@ export function ErrorBanner(): React.ReactElement | null {
   const errors = store((s) => s.errors);
   const clear = store((s) => s.clear);
 
+  const handleDismiss = useCallback(() => {
+    clear();
+  }, [clear]);
+
   const latest = errors[0];
   if (!latest) return null;
 
   const catalog = ERROR_CATALOG[latest.key];
   if (!catalog) return null;
-
-  const handleDismiss = useCallback(() => {
-    clear();
-  }, [clear]);
 
   return (
     <View style={styles.banner} testID="error-banner">

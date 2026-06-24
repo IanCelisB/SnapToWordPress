@@ -1,7 +1,6 @@
 // src/stores/__tests__/error-store.test.ts
 
 import { createErrorStore, __resetErrorStoreForTest } from '../error-store';
-import type { WorkerEvent } from '../../sync/queue-worker';
 
 function freshStore() {
   __resetErrorStoreForTest();

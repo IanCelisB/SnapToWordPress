@@ -40,7 +40,7 @@ import {
 import { removeImageFile } from '@/services/image-persistence';
 import { Strings } from '@/ui/strings';
 import { PriceConfirmGate } from '@/ui/components/PriceConfirmGate';
-import { Button, Card, ErrorCard, FieldRow, Header, Input, Section } from '@/ui/primitives';
+import { Button, Card, ErrorCard, Header, Input, Section } from '@/ui/primitives';
 import { colors, radius, spacing, typography } from '@/ui/theme';
 import type {
   Product,
@@ -65,7 +65,6 @@ export default function EditProduct(): React.ReactElement {
   const [priceEdited, setPriceEdited] = useState(false);
   const [originalPrice, setOriginalPrice] = useState(0);
   const [categoryId, setCategoryId] = useState<number | null>(null);
-  const [categoryName, setCategoryName] = useState<string | null>(null);
   const [publishOnSync, setPublishOnSync] = useState(false);
   const [error, setError] = useState<CatalogEntry | null>(null);
   const [busy, setBusy] = useState(false);
@@ -76,6 +75,7 @@ export default function EditProduct(): React.ReactElement {
       try {
         const db = await openDB();
         const cats = await categoriesRepo.list(db);
+        // eslint-disable-next-line react-hooks/rules-of-hooks
         const s = await useReviewQueueStore();
         if (cancelled) return;
         setStore(s);
@@ -93,7 +93,6 @@ export default function EditProduct(): React.ReactElement {
         setPriceConfirmed(p.priceConfirmed);
         setOriginalPrice(p.price);
         setCategoryId(p.categoryId);
-        setCategoryName(p.categoryName);
         setPublishOnSync(p.publishOnSync);
         const imgs = await imagesRepo.listForProduct(db, id);
         if (!cancelled) {
@@ -144,7 +143,6 @@ export default function EditProduct(): React.ReactElement {
   const handleCategorySelect = useCallback(
     async (nextId: number | null, nextName: string | null) => {
       setCategoryId(nextId);
-      setCategoryName(nextName);
       if (!store || !product) return;
       const err = await store.getState().updateField(product.localId, {
         categoryId: nextId,
@@ -227,7 +225,6 @@ export default function EditProduct(): React.ReactElement {
           onPress: async () => {
             setBusy(true);
             try {
-              const db = await openDB();
               await Promise.all(
                 images
                   .map((i) => i.filePath)

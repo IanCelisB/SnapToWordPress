@@ -1,6 +1,13 @@
 // Flat config for ESLint 9.x (the version Expo SDK 56 ships with).
 // Keep this file aligned with eslint-config-expo; loosen rules only with intent.
-const expoConfig = require('eslint-config-expo');
+const expoConfig = require('eslint-config-expo/flat');
+
+// Extract the @typescript-eslint plugin already registered by expo flat config
+// so we can override rules without redefining the plugin (ESLint 9 forbids that).
+const tsPluginConfig = expoConfig.find(
+  (c) => c.plugins && c.plugins['@typescript-eslint'],
+);
+const tsPlugin = tsPluginConfig.plugins['@typescript-eslint'];
 
 module.exports = [
   {
@@ -16,6 +23,9 @@ module.exports = [
   },
   ...expoConfig,
   {
+    plugins: {
+      '@typescript-eslint': tsPlugin,
+    },
     rules: {
       // Stricter than the default Expo config.
       '@typescript-eslint/no-explicit-any': 'error',

@@ -19,7 +19,6 @@ import {
   Text,
   TextInput,
   TextInputProps,
-  TextStyle,
   View,
   ViewStyle,
 } from 'react-native';

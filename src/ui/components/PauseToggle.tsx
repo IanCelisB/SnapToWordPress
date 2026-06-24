@@ -8,7 +8,7 @@ import { useCallback } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSyncStore } from '../../stores/syncStore';
 import { Strings } from '../strings';
-import { colors, radius, spacing } from '../theme';
+import { colors, spacing } from '../theme';
 
 export function PauseToggle(): React.ReactElement {
   const store = useSyncStore();
