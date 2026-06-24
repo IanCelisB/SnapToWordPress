@@ -7,11 +7,6 @@
     "icon": "./assets/icon.png",
     "scheme": "etiquetador",
     "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#FFFFFF"
-    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "cl.optifull.etiquetador",
@@ -26,8 +21,6 @@
     "android": {
       "package": "cl.optifull.etiquetador",
       "versionCode": 1,
-      "jsEngine": "hermes",
-      "newArchEnabled": true,
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.READ_MEDIA_IMAGES",
@@ -36,7 +29,7 @@
       ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FFFFFF"
+        "backgroundColor": "#5C3A1E"
       }
     },
     "plugins": [
@@ -56,8 +49,26 @@
         }
       ],
       "expo-sqlite",
-      "expo-build-properties",
-      "expo-dev-client"
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#FFFFFF",
+          "imageWidth": 200
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "jsEngine": "hermes",
+            "newArchEnabled": true
+          }
+        }
+      ],
+      "expo-dev-client",
+      "expo-splash-screen"
     ],
     "experiments": {
       "typedRoutes": true

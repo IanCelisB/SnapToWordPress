@@ -15,6 +15,7 @@
     "test:ci": "npm run lint && npm run typecheck && npm test && bash scripts/ci-error-grep.sh"
   },
   "dependencies": {
+    "@expo/metro-runtime": "^56.0.15",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "expo": "56.0.12",
     "expo-build-properties": "56.0.19",
@@ -28,6 +29,7 @@
     "expo-network": "56.0.5",
     "expo-router": "56.2.11",
     "expo-secure-store": "56.0.4",
+    "expo-splash-screen": "~56.0.10",
     "expo-sqlite": "56.0.5",
     "expo-status-bar": "56.0.4",
     "nativewind": "4.2.5",
